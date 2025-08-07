@@ -16,7 +16,7 @@ const (
 	EOF     = "EOF"
 
 	// Delimiters
-	LBRACE     = "{}"        // {
+	LBRACE     = "{}"       // {
 	RBRACE     = "}"        // }
 	LDELIM     = "LDELIM"   // Smartyの左デリミタ (e.g., {)
 	RDELIM     = "RDELIM"   // Smartyの右デリミタ (e.g., })

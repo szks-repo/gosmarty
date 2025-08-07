@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/szks-repo/gosmarty/parser"
 	"github.com/szks-repo/gosmarty/lexer"
+	"github.com/szks-repo/gosmarty/parser"
 )
 
 func Test_Day1(t *testing.T) {
