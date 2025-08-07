@@ -22,7 +22,7 @@ func New(l *lexer.Lexer) *Parser {
 		l:      l,
 		errors: []string{},
 	}
-	// 2つトークンを読み込み、curTokenとpeekTokenをセットする
+
 	p.nextToken()
 	p.nextToken()
 	return p
@@ -118,7 +118,7 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
-func (p.Parser) peekTokenIs(t token.TokenType) bool {
+func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
