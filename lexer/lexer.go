@@ -1,18 +1,20 @@
 package lexer
 
 import (
+	"unicode"
+
 	"github.com/szks-repo/gosmarty/token"
 )
 
 type Lexer struct {
-	input        string
+	input        []rune
 	position     int  // 現在の文字の位置
 	readPosition int  // 次の文字の位置
-	ch           byte // 現在検査中の文字
+	ch           rune // 現在検査中の文字
 }
 
 func New(input string) *Lexer {
-	l := &Lexer{input: input}
+	l := &Lexer{input: []rune(input)}
 	l.readChar()
 	return l
 }
@@ -27,7 +29,7 @@ func (l *Lexer) readChar() {
 	l.readPosition++
 }
 
-func (l *Lexer) peekChar() byte {
+func (l *Lexer) peekChar() rune {
 	if l.readPosition >= len(l.input) {
 		return 0
 	}
@@ -61,14 +63,14 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Literal = ""
 		tok.Type = token.EOF
 	default:
-		if isLetter(l.ch) {
+		if unicode.IsLetter(l.ch) {
 			// ここでTEXTかIDENTかを判断する必要がある
 			// 簡単のため、ここでは識別子として読み取る
 			literal := l.readIdentifier()
 			tok.Type = token.LookupIdent(literal)
 			tok.Literal = literal
 			return tok // readIdentifier内でreadCharを呼んでいるため、早期リターン
-		} else if isDigit(l.ch) {
+		} else if unicode.IsDigit(l.ch) {
 			tok.Type = token.NUMBER
 			tok.Literal = l.readNumber()
 			return tok
@@ -85,21 +87,21 @@ func (l *Lexer) NextToken() token.Token {
 
 func (l *Lexer) readIdentifier() string {
 	position := l.position
-	for isLetter(l.ch) || isDigit(l.ch) {
+	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.input[position:l.position])
 }
 
 func (l *Lexer) readNumber() string {
 	position := l.position
-	for isDigit(l.ch) {
+	for unicode.IsDigit(l.ch) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return string(l.input[position:l.position])
 }
 
-func (l *Lexer) readString(quote byte) string {
+func (l *Lexer) readString(quote rune) string {
 	position := l.position + 1
 	for {
 		l.readChar()
@@ -107,7 +109,7 @@ func (l *Lexer) readString(quote byte) string {
 			break
 		}
 	}
-	return l.input[position:l.position]
+	return string(l.input[position:l.position])
 }
 
 func (l *Lexer) readComment() string {
@@ -124,7 +126,7 @@ func (l *Lexer) readComment() string {
 	commentBody := l.input[position:l.position]
 	l.readChar() // '*' を消費
 	l.readChar() // '}' を消費
-	return commentBody
+	return string(commentBody)
 }
 
 func (l *Lexer) skipWhitespace() {
@@ -133,14 +135,6 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch == '/'
-}
-
-func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
-}
-
-func newToken(tokenType token.TokenType, ch byte) token.Token {
+func newToken(tokenType token.TokenType, ch rune) token.Token {
 	return token.Token{Type: tokenType, Literal: string(ch)}
 }
