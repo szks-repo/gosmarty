@@ -1,16 +1,17 @@
 package lexer
 
 import (
+	"fmt"
 	"unicode"
 
 	"github.com/szks-repo/gosmarty/token"
 )
 
 type Lexer struct {
-	input        []rune
-	position     int  // 現在の文字の位置
-	readPosition int  // 次の文字の位置
-	ch           rune // 現在検査中の文字
+	input   []rune
+	pos     int  // 現在の文字の位置
+	readPos int  // 次の文字の位置
+	ch      rune // 現在検査中の文字
 }
 
 func New(input string) *Lexer {
@@ -20,20 +21,20 @@ func New(input string) *Lexer {
 }
 
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
+	if l.readPos >= len(l.input) {
 		l.ch = 0 // 0はASCIIのNUL文字で、EOFを表す
 	} else {
-		l.ch = l.input[l.readPosition]
+		l.ch = l.input[l.readPos]
 	}
-	l.position = l.readPosition
-	l.readPosition++
+	l.pos = l.readPos
+	l.readPos++
 }
 
 func (l *Lexer) peekChar() rune {
-	if l.readPosition >= len(l.input) {
+	if l.readPos >= len(l.input) {
 		return 0
 	}
-	return l.input[l.readPosition]
+	return l.input[l.readPos]
 }
 
 // NextToken は入力ソースから次のトークンを読み取って返します。
@@ -42,6 +43,7 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.skipWhitespace()
 
+	fmt.Println("======>", string(l.ch))
 	switch l.ch {
 	case '{':
 		// コメント {* ... *} のハンドリング
@@ -86,34 +88,34 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func (l *Lexer) readIdentifier() string {
-	position := l.position
+	pos := l.pos
 	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) {
 		l.readChar()
 	}
-	return string(l.input[position:l.position])
+	return string(l.input[pos:l.pos])
 }
 
 func (l *Lexer) readNumber() string {
-	position := l.position
+	pos := l.pos
 	for unicode.IsDigit(l.ch) {
 		l.readChar()
 	}
-	return string(l.input[position:l.position])
+	return string(l.input[pos:l.pos])
 }
 
 func (l *Lexer) readString(quote rune) string {
-	position := l.position + 1
+	pos := l.pos + 1
 	for {
 		l.readChar()
 		if l.ch == quote || l.ch == 0 {
 			break
 		}
 	}
-	return string(l.input[position:l.position])
+	return string(l.input[pos:l.pos])
 }
 
 func (l *Lexer) readComment() string {
-	position := l.position + 1
+	pos := l.pos + 1
 	for {
 		l.readChar()
 		if l.ch == '*' && l.peekChar() == '}' {
@@ -123,7 +125,7 @@ func (l *Lexer) readComment() string {
 			break
 		}
 	}
-	commentBody := l.input[position:l.position]
+	commentBody := l.input[pos:l.pos]
 	l.readChar() // '*' を消費
 	l.readChar() // '}' を消費
 	return string(commentBody)

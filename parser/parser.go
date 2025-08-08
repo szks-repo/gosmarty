@@ -39,8 +39,11 @@ func (p *Parser) nextToken() {
 
 // ParseProgram はパース処理を開始し、ASTのルートノードを返します。
 func (p *Parser) ParseProgram() *ast.Program {
+	fmt.Println("ParseProgram Start")
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
+
+	fmt.Println("tokenLit =>", p.curToken.Literal)
 
 	// NOTE: この実装は非常に簡略化されています。
 	// 本来はLexerがTEXTモードとTAGモードを区別し、
@@ -133,7 +136,7 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 }
 
 func (p *Parser) peekError(t token.TokenType) {
-	msg := fmt.Sprintf("expected next token to be %s, got %s instead",
-		t, p.peekToken.Type)
+	msg := fmt.Sprintf("expected next token to be %s, got %s(%s) instead",
+		t, p.peekToken.Type, p.peekToken.Literal)
 	p.errors = append(p.errors, msg)
 }
