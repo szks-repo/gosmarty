@@ -13,58 +13,57 @@ type Node interface {
 	String() string
 }
 
-// Statement は文を表すノードです。
-type Statement interface {
-	Node
-	statementNode()
+// Tree はパースされたテンプレート全体を表すASTのルートです。
+// text/template の parse.Tree に相当します。
+type Tree struct {
+	Name string    // テンプレート名（将来的な利用のため）
+	Root *ListNode // ノードツリーのルート
 }
 
-// Expression は式を表すノードです。
-type Expression interface {
-	Node
-	expressionNode()
+func (t *Tree) String() string {
+	return t.Root.String()
 }
 
-// Program はASTのルートノードです。
-type Program struct {
-	Statements []Statement
+// ListNode はノードのシーケンス（リスト）を表します。
+// テンプレートはTextNodeとActionNodeなどの連続したリストと見なせます。
+type ListNode struct {
+	Nodes []Node // 子ノードのリスト
 }
 
-func (p *Program) TokenLiteral() string {
-	if len(p.Statements) > 0 {
-		return p.Statements[0].TokenLiteral()
+func (ln *ListNode) TokenLiteral() string {
+	if len(ln.Nodes) > 0 {
+		return ln.Nodes[0].TokenLiteral()
 	}
 	return ""
 }
-func (p *Program) String() string {
+func (ln *ListNode) String() string {
 	var out bytes.Buffer
-	for _, s := range p.Statements {
-		out.WriteString(s.String())
+	for _, n := range ln.Nodes {
+		out.WriteString(n.String())
 	}
 	return out.String()
 }
 
-// TextStatement はプレーンなテキストを表します。
-type TextStatement struct {
+// TextNode はプレーンなテキストを表します。
+type TextNode struct {
 	Token token.Token // The token.TEXT token
 	Value string
 }
 
-func (ts *TextStatement) statementNode()       {}
-func (ts *TextStatement) TokenLiteral() string { return ts.Token.Literal }
-func (ts *TextStatement) String() string       { return ts.Value }
+func (tn *TextNode) TokenLiteral() string { return tn.Token.Literal }
+func (tn *TextNode) String() string       { return tn.Value }
 
-// ExpressionStatement は {$foo} のような式文を表します。
-type ExpressionStatement struct {
-	Token      token.Token // The '{' token
-	Expression Expression
+// ActionNode は評価されるべきアクション（例: {$name}）を表します。
+// `{{...}}` に相当します。
+type ActionNode struct {
+	Token token.Token // The '{' (LDELIM) token
+	Pipe  Node        // 評価されるべき式のパイプライン（将来の拡張用）
 }
 
-func (es *ExpressionStatement) statementNode()       {}
-func (es *ExpressionStatement) TokenLiteral() string { return es.Token.Literal }
-func (es *ExpressionStatement) String() string {
-	if es.Expression != nil {
-		return "{" + es.Expression.String() + "}"
+func (an *ActionNode) TokenLiteral() string { return an.Token.Literal }
+func (an *ActionNode) String() string {
+	if an.Pipe != nil {
+		return "{" + an.Pipe.String() + "}"
 	}
 	return ""
 }
@@ -75,6 +74,16 @@ type Identifier struct {
 	Value string
 }
 
-func (i *Identifier) expressionNode()      {}
 func (i *Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i *Identifier) String() string       { return "$" + i.Value }
+
+// IfNode は {if ...} ... {else} ... {/if} 構文を表します
+type IfNode struct {
+	Token       token.Token // The 'if' token
+	Condition   Node        // ifの条件式
+	Consequence *ListNode   // 条件が真の場合に実行されるノードリスト
+	Alternative *ListNode   // 条件が偽の場合に実行されるノードリスト (else, elseif)
+}
+
+func (in *IfNode) TokenLiteral() string { return in.Token.Literal }
+func (in *IfNode) String() string       { /* デバッグ用の実装 */ return "if" }
