@@ -42,7 +42,9 @@ const (
 	EQ    = "=="
 	NOTEQ = "!="
 	LT    = "<"
+	LTE   = "<="
 	GT    = ">"
+	GTE   = ">="
 
 	IF         = "if"
 	ELSE       = "else"
