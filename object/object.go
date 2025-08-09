@@ -13,6 +13,7 @@ const (
 	StringType ObjectType = iota + 1
 	BoolType
 	NullType
+	NumberType
 )
 
 type Object interface {
