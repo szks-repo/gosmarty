@@ -1,17 +1,15 @@
 package token
 
-// TokenType はトークンの種類を表す文字列です。
-type TokenType string
-
 // Token は字句解析器(Lexer)が生成するトークンを表す構造体です。
 type Token struct {
 	Type    TokenType
 	Literal string
 }
 
-// Smartyテンプレートで使われるトークンの種類を定義します。
+// TokenType はトークンの種類を表す文字列です。
+type TokenType string
+
 const (
-	// 特殊なトークン
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 
@@ -25,8 +23,9 @@ const (
 	COMMENT    = "COMMENT"  // {* ... *}
 
 	// 識別子 + リテラル
-	IDENT  = "IDENT"  // 変数名など (例: foo, bar)
-	DOLLAR = "$"      // $
+	IDENT  = "IDENT" // 変数名など (例: foo, bar)
+	DOLLAR = "$"
+	PIPE   = "|"
 	STRING = "STRING" // "foo" or 'bar'
 	NUMBER = "NUMBER" // 12345
 	TEXT   = "TEXT"   // デリミタの外にあるプレーンなテキスト
