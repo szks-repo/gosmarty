@@ -1,6 +1,8 @@
 package gosmarty
 
 import (
+	"strings"
+
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/object"
 )
@@ -12,27 +14,25 @@ var (
 // Eval はASTノードを評価する中心的な関数
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
-
 	// ノードのリスト
 	case *ast.ListNode:
 		return evalNodes(node.Nodes, env)
-
 	// アクション {$...}
 	case *ast.ActionNode:
 		// ActionNodeの中の式を評価する
 		return Eval(node.Pipe, env)
-
 	// テキスト
 	case *ast.TextNode:
 		return &object.String{Value: node.Value}
-
 	// 識別子 (変数)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
-
 	case *ast.IfNode:
 		return evalIfNode(node, env)
+	case *ast.PipeNode:
+		return evalPipeNode(node, env)
 	}
+
 	return nil
 }
 
@@ -85,4 +85,44 @@ func isTruthy(obj object.Object) bool {
 	default:
 		return true // NULLと空文字以外は真とみなす
 	}
+}
+
+// Builtin はテンプレート内で使用可能なGoの関数の型
+type Builtin func(input object.Object) object.Object
+
+var builtins = map[string]Builtin{
+	"nl2br": func(input object.Object) object.Object {
+		if input.Type() != object.StringType {
+			return &object.String{Value: ""} // またはエラーオブジェクト
+		}
+
+		str := input.(*object.String).Value
+		return &object.String{Value: strings.ReplaceAll(str, "\n", "<br>")}
+	},
+	"devtest1": func(input object.Object) object.Object {
+		if input.Type() != object.StringType {
+			return &object.String{Value: ""}
+		}
+		str := input.(*object.String).Value
+		return &object.String{Value: str + "_test1"}
+	},
+}
+
+func evalPipeNode(node *ast.PipeNode, env *object.Environment) object.Object {
+	// 1. 左辺を評価する
+	left := Eval(node.Left, env)
+
+	// 2. 関数名を取得
+	funcName := node.Function.Value
+
+	// 3. 関数レジストリから関数を探す
+	fn, ok := builtins[funcName]
+	if !ok {
+		// エラー処理: 未定義の関数
+		// ここでは空文字を返す
+		return &object.String{Value: ""}
+	}
+
+	// 4. 関数を実行して結果を返す
+	return fn(left)
 }
