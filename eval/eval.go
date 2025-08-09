@@ -1,4 +1,4 @@
-package gosmarty
+package eval
 
 import (
 	"strings"
