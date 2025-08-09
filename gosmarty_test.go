@@ -12,64 +12,52 @@ func TestVariableEvaluation(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input      string
-		envFactory func() *object.Environment
-		want       string
+		input string
+		env   *object.Environment
+		want  string
 	}{
 		{
 			input: `Hello, {$name}!`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("name", &object.String{Value: "Smarty"})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("name", "Smarty"),
+			)),
 			want: "Hello, Smarty!",
 		},
 		{
 			input: `Hello, {$first_name} {$given_name}!`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("first_name", &object.String{Value: "Go"})
-				env.Set("given_name", &object.String{Value: "Smarty"})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("first_name", "Go"),
+				object.WithVariable("given_name", "Smarty"),
+			)),
 			want: "Hello, Go Smarty!",
 		},
 		{
 			input: `{$contents | nl2br}`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("contents", &object.String{Value: "Hello1\nHello2\nHello3"})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("contents", "Hello1\nHello2\nHello3"),
+			)),
 			want: "Hello1<br>Hello2<br>Hello3",
 		},
 		{
 			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("name", &object.String{Value: "Smarty"})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("name", "Smarty"),
+			)),
 			want: "Smarty_test1_test1_test1 1|2|3|4",
 		},
 		// Numbers
 		{
 			input: `This is number test: {$num}.`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("num", &object.Number{Value: 777})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("num", 777),
+			)),
 			want: "This is number test: 777.",
 		},
 		{
 			input: `This is number test: {$num}.`,
-			envFactory: func() *object.Environment {
-				env := object.NewEnvironment()
-				env.Set("num", &object.Number{Value: -777})
-				return env
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("num", -777),
+			)),
 			want: "This is number test: -777.",
 		},
 	}
@@ -81,7 +69,7 @@ func TestVariableEvaluation(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			evaled := gsm.Exec(tt.envFactory())
+			evaled := gsm.Exec(tt.env)
 			result, ok := evaled.(*object.String)
 			if !ok {
 				t.Error("isn't object.String")
@@ -101,72 +89,72 @@ func TestIfStatements(t *testing.T) {
 	// テストケースを定義
 	tests := []struct {
 		input    string
-		envSetup map[string]object.Object
+		env      *object.Environment
 		expected string
 	}{
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
-			envSetup: map[string]object.Object{
-				"is_logged_in": object.TRUE,
-				"name":         &object.String{Value: "Suzuki"},
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("is_logged_in", true),
+				object.WithVariable("name", "Suzuki"),
+			)),
 			expected: "Welcome, Suzuki!",
 		},
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
-			envSetup: map[string]object.Object{
-				"is_logged_in": object.FALSE,
-				"name":         &object.String{Value: "Suzuki"},
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("is_logged_in", false),
+				object.WithVariable("name", "Suzuki"),
+			)),
 			expected: "Hello, Guest.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{
-				"item_count": &object.String{Value: "exists"}, // 空文字以外はtrue
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("item_count", "exists"), // 空文字以外はtrue
+			)),
 			expected: "Your item is available.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{
-				"item_count": &object.String{Value: ""}, // 空文字はfalse
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("item_count", ""), // 空文字はfalse
+			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{
-				"item_count": &object.Null{}, // nullはfalse
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("item_count", nil), // nilはfalse
+			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{
-				"item_count": &object.Number{Value: 0}, // 0はfalse
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("item_count", 0), // 0はfalse
+			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{
-				"item_count": &object.Number{Value: 1}, // 0以外true
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("item_count", 1), // 0以外true
+			)),
 			expected: "Your item is available.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
-			envSetup: map[string]object.Object{
-				"show_block": object.TRUE,
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("show_block", true),
+			)),
 			expected: "This block is shown.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
-			envSetup: map[string]object.Object{
-				"show_block": object.FALSE,
-			},
+			env: Must(object.NewEnvironment(
+				object.WithVariable("show_block", false),
+			)),
 			expected: "",
 		},
 	}
@@ -178,13 +166,7 @@ func TestIfStatements(t *testing.T) {
 			continue
 		}
 
-		env := object.NewEnvironment()
-		for key, val := range tt.envSetup {
-			env.Set(key, val)
-		}
-		evaled := gsm.Exec(env)
-
-		// 結果を検証
+		evaled := gsm.Exec(tt.env)
 		result, ok := evaled.(*object.String)
 		if !ok {
 			t.Fatalf("evaluation result is not String. got=%T (%+v)", evaled, evaled)
