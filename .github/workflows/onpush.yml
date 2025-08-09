@@ -5,12 +5,12 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths:
+      - !*.md
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
