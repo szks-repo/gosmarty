@@ -48,6 +48,12 @@ func (p *Parser) ParseProgram() *ast.Tree {
 			node = p.parseTextNode()
 		case token.LDELIM:
 			// '{' を見つけたら、次のトークンを覗き見てどのタグか判断する
+			// If it's a comment, consume it and continue
+			if p.peekToken.Type == token.COMMENT {
+				p.nextToken() // Consume LDELIM
+				p.nextToken() // Consume COMMENT
+				// コメントをスキップした後、現在のトークンがTEXTであれば、それを処理する
+			}
 			node = p.parseTag()
 		default:
 			p.nextToken()

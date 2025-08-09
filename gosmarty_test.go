@@ -82,6 +82,63 @@ func TestVariableEvaluation(t *testing.T) {
 	}
 }
 
+func TestComment(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input string
+		env   *object.Environment
+		want  string
+	}{
+		{
+			input: `Hello,{* Comment *} {$name}!`,
+			env: Must(object.NewEnvironment(
+				object.WithVariable("name", "Smarty"),
+			)),
+			want: "Hello, Smarty!",
+		},
+		{
+			input: `Hello,{* Comment *}{$name}!`,
+			env: Must(object.NewEnvironment(
+				object.WithVariable("name", "Smarty"),
+			)),
+			want: "Hello,Smarty!",
+		},
+		{
+			input: `{*
+Note:
+  - One
+  - Two
+  - Three			
+*}
+<span>Hello</span>`,
+			env: Must(object.NewEnvironment(
+				object.WithVariable("name", "Smarty"),
+			)),
+			want: "\n<span>Hello</span>",
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
+			gsm, err := New("test").Parse(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			evaled := gsm.Exec(tt.env)
+			result, ok := evaled.(*object.String)
+			if !ok {
+				t.Error("isn't object.String")
+			}
+
+			if result.Value != tt.want {
+				t.Errorf("result has wrong value. got=%q, want=%q", result.Value, tt.want)
+			}
+		})
+	}
+}
+
 // if文のテスト
 func TestIfStatements(t *testing.T) {
 	t.Parallel()
