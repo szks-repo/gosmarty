@@ -42,7 +42,7 @@ func evalNodes(nodes []ast.Node, env *object.Environment) object.Object {
 	for _, node := range nodes {
 		evaluated := Eval(node, env)
 		// 評価結果がNULLでなければ、文字列として連結する
-		if evaluated != nil && evaluated.Type() != object.NULL_OBJ {
+		if evaluated != nil && evaluated.Type() != object.NullType {
 			result += evaluated.Inspect()
 		}
 	}
