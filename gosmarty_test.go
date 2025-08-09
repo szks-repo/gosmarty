@@ -53,6 +53,25 @@ func TestVariableEvaluation(t *testing.T) {
 			},
 			want: "Smarty_test1_test1_test1 1|2|3|4",
 		},
+		// Numbers
+		{
+			input: `This is number test: {$num}.`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("num", &object.Number{Value: 777})
+				return env
+			},
+			want: "This is number test: 777.",
+		},
+		{
+			input: `This is number test: {$num}.`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("num", &object.Number{Value: -777})
+				return env
+			},
+			want: "This is number test: -777.",
+		},
 	}
 
 	for i, tt := range tests {
@@ -121,6 +140,20 @@ func TestIfStatements(t *testing.T) {
 				"item_count": &object.Null{}, // nullはfalse
 			},
 			expected: "Your item is sold out.",
+		},
+		{
+			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
+			envSetup: map[string]object.Object{
+				"item_count": &object.Number{Value: 0}, // 0はfalse
+			},
+			expected: "Your item is sold out.",
+		},
+		{
+			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
+			envSetup: map[string]object.Object{
+				"item_count": &object.Number{Value: 1}, // 0以外true
+			},
+			expected: "Your item is available.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,

@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/lexer"
@@ -70,8 +71,10 @@ func (p *Parser) parseTextNode() *ast.TextNode {
 func (p *Parser) parseTag() ast.Node {
 	switch p.peekToken.Type {
 	case token.DOLLAR:
-		// return p.parseVariableTag()  add: Pipeline
-		return p.parsePipeLineTag()
+		return p.parseVariableTagWithPipeline()
+	// todo: consider this case
+	// case token.NUMBER:
+	// return p.parseVariableTagWithPipeline()
 	case token.IF:
 		return p.parseIfTag()
 	default:
@@ -206,10 +209,7 @@ func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
-/////
-
-// parseVariableTag を parsePipeLineTag に改名・修正
-func (p *Parser) parsePipeLineTag() ast.Node {
+func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 	// curTokenは '{'
 	p.nextToken() // '{' を消費 -> curTokenは '$'
 
@@ -249,17 +249,35 @@ func (p *Parser) parsePipeLineTag() ast.Node {
 
 // パイプラインの元となる最初の式をパースするヘルパー
 func (p *Parser) parsePrimaryExpr() ast.Node {
-	// 今は {$name} のみサポート
-	if !p.curTokenIs(token.DOLLAR) {
+	switch p.curToken.Type {
+	case token.DOLLAR:
+		p.nextToken() // '
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+			return nil
+		}
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		p.nextToken() // 識別子を消費
+		return ident
+	case token.NUMBER:
+		return p.parseNumberLiteral()
+	default:
+		// 他のプライマリー式（文字列リテラルなど）もここに追加できる
 		return nil
 	}
-	p.nextToken() // '$' を消費
+}
 
-	if !p.curTokenIs(token.IDENT) {
-		p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+func (p *Parser) parseNumberLiteral() ast.Node {
+	lit := &ast.NumberLiteral{Token: p.curToken}
+
+	value, err := strconv.ParseFloat(p.curToken.Literal, 64)
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as float64", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
 		return nil
 	}
-	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	p.nextToken() // 識別子を消費
-	return ident
+
+	lit.Value = value
+	p.nextToken() // 数値トークンを消費
+	return lit
 }

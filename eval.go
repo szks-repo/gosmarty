@@ -27,6 +27,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	// 識別子 (変数)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+	case *ast.NumberLiteral:
+		return &object.Number{Value: node.Value}
 	case *ast.IfNode:
 		return evalIfNode(node, env)
 	case *ast.PipeNode:
@@ -80,8 +82,8 @@ func isTruthy(obj object.Object) bool {
 		return obj.Value != ""
 	case *object.Boolean:
 		return obj.Value
-	// case *object.Number:
-	//  return obj.Value != 0
+	case *object.Number:
+		return obj.Value != 0
 	default:
 		return true // NULLと空文字以外は真とみなす
 	}
