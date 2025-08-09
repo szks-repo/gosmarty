@@ -67,6 +67,20 @@ var builtinModifiers = map[string]Modifier{
 
 		return &object.String{Value: strings.ToLower(input.Inspect())}
 	},
+	"wordwrap": func(input object.Object, a ...any) object.Object {
+		if input.Type() != object.StringType {
+			return &object.String{}
+		}
+
+		// TODO:
+		// parse args
+		// 0: width
+		// 1: breakWord
+		// 2: cutLong
+		var opt phpstring.WordwrapOpt
+
+		return &object.String{Value: phpstring.Wordwrap(input.Inspect(), opt)}
+	},
 	"devtest1": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{Value: ""}
