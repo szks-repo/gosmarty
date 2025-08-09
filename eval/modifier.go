@@ -38,6 +38,13 @@ var builtinModifiers = map[string]Modifier{
 
 		return &object.String{Value: strings.ToUpper(input.Inspect())}
 	},
+	"lower": func(input object.Object) object.Object {
+		if input.Type() != object.StringType {
+			return &object.String{}
+		}
+
+		return &object.String{Value: strings.ToLower(input.Inspect())}
+	},
 	"devtest1": func(input object.Object) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{Value: ""}
