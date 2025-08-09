@@ -14,6 +14,8 @@ const (
 	BoolType
 	NullType
 	NumberType
+	ArrayType
+	MapType
 )
 
 type Object interface {
