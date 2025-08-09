@@ -1,12 +1,6 @@
 package eval
 
 import (
-	"strings"
-
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
-
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/object"
 )
@@ -93,52 +87,17 @@ func isTruthy(obj object.Object) bool {
 	}
 }
 
-// Builtin はテンプレート内で使用可能なGoの関数の型
-type Builtin func(input object.Object) object.Object
-
-var msgPrinter = message.NewPrinter(language.Japanese)
-
-var builtins = map[string]Builtin{
-	"nl2br": func(input object.Object) object.Object {
-		if input.Type() != object.StringType {
-			return &object.String{} // またはエラーオブジェクト
-		}
-
-		str := input.(*object.String).Value
-		return &object.String{Value: strings.ReplaceAll(str, "\n", "<br>")}
-	},
-	"number_format": func(input object.Object) object.Object {
-		if input.Type() != object.NumberType {
-			return &object.String{}
-		}
-
-		val := input.(*object.Number).Value
-		return &object.String{Value: msgPrinter.Sprint(number.Decimal(val))}
-	},
-	"devtest1": func(input object.Object) object.Object {
-		if input.Type() != object.StringType {
-			return &object.String{Value: ""}
-		}
-		str := input.(*object.String).Value
-		return &object.String{Value: str + "_test1"}
-	},
-}
-
 func evalPipeNode(node *ast.PipeNode, env *object.Environment) object.Object {
 	// 1. 左辺を評価する
 	left := Eval(node.Left, env)
 
-	// 2. 関数名を取得
 	funcName := node.Function.Value
-
-	// 3. 関数レジストリから関数を探す
-	fn, ok := builtins[funcName]
+	fn, ok := builtinModifiers[funcName]
 	if !ok {
 		// エラー処理: 未定義の関数
 		// ここでは空文字を返す
 		return &object.String{Value: ""}
 	}
 
-	// 4. 関数を実行して結果を返す
 	return fn(left)
 }
