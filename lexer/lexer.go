@@ -19,17 +19,19 @@ type Lexer struct {
 	pos     int
 	readPos int
 	ch      rune
-	state   lexerState // 状態を保持するフィールドを追加
+	state   lexerState
 }
 
 func New(input string) *Lexer {
-	l := &Lexer{input: []rune(input), state: stateText} // 初期状態は stateText
+	l := &Lexer{
+		input: []rune(input),
+		state: stateText,
+	}
 	l.readChar()
 	return l
 }
 
 func (l *Lexer) NextToken() token.Token {
-	// 状態に応じて処理を分岐
 	if l.state == stateText {
 		return l.nextTokenInText()
 	}
@@ -54,11 +56,11 @@ func (l *Lexer) nextTokenInText() token.Token {
 
 	// `{` が見つかった場合
 	if l.ch == '{' {
-		l.state = stateTag        // タグモードに移行
-		return l.nextTokenInTag() // タグモードの解析をすぐに開始
+		// タグモードに移行
+		l.state = stateTag
+		return l.nextTokenInTag()
 	}
 
-	// ファイルの終端
 	return token.Token{Type: token.EOF, Literal: ""}
 }
 
@@ -107,23 +109,19 @@ func (l *Lexer) nextTokenInTag() token.Token {
 	return tok
 }
 
-// readIdentifierを修正して `/` も識別子の一部として扱えるようにする
 func (l *Lexer) readIdentifier() string {
 	pos := l.pos
 	// `/` で始まる場合（終了タグ）
 	if l.ch == '/' {
 		l.readChar()
 	}
-	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) {
+	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) || l.ch == '_' {
 		l.readChar()
 	}
+
 	return string(l.input[pos:l.pos])
 }
 
-// (readChar, peekChar, readNumber, readString, readComment, skipWhitespace, newToken は変更なし)
-// ... (既存のヘルパー関数をここにペースト) ...
-// NOTE: readChar, peekChar, readNumber, readString, readComment, skipWhitespace, newToken といった
-// ヘルパー関数は変更がないため、元のコードをそのまま使用してください。
 func (l *Lexer) readChar() {
 	if l.readPos >= len(l.input) {
 		l.ch = 0
