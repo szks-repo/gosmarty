@@ -1,6 +1,7 @@
 package gosmarty
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/szks-repo/gosmarty/object"
@@ -8,31 +9,58 @@ import (
 
 // 変数置換の基本テスト
 func TestVariableEvaluation(t *testing.T) {
-	input := `Hello, {$name}!`
-	expected := "Hello, Smarty!"
+	t.Parallel()
 
-	gsm, err := New("test").Parse(input)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		input      string
+		envFactory func() *object.Environment
+		want       string
+	}{
+		{
+			input: `Hello, {$name}!`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("name", &object.String{Value: "Smarty"})
+				return env
+			},
+			want: "Hello, Smarty!",
+		},
+		{
+			input: `Hello, {$first_name} {$given_name}!`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("first_name", &object.String{Value: "Go"})
+				env.Set("given_name", &object.String{Value: "Smarty"})
+				return env
+			},
+			want: "Hello, Go Smarty!",
+		},
 	}
 
-	env := object.NewEnvironment()
-	env.Set("name", &object.String{Value: "Smarty"})
-	evaled := gsm.Exec(env)
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
+			gsm, err := New("test").Parse(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// 3. 結果を検証
-	result, ok := evaled.(*object.String)
-	if !ok {
-		t.Error("isn't object.String")
-	}
+			evaled := gsm.Exec(tt.envFactory())
+			result, ok := evaled.(*object.String)
+			if !ok {
+				t.Error("isn't object.String")
+			}
 
-	if result.Value != expected {
-		t.Errorf("result has wrong value. got=%q, want=%q", result.Value, expected)
+			if result.Value != tt.want {
+				t.Errorf("result has wrong value. got=%q, want=%q", result.Value, tt.want)
+			}
+		})
 	}
 }
 
 // if文のテスト
 func TestIfStatements(t *testing.T) {
+	t.Parallel()
+
 	// テストケースを定義
 	tests := []struct {
 		input    string
