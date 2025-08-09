@@ -3,16 +3,12 @@ package eval
 import (
 	"strings"
 
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
-	"golang.org/x/text/number"
+	phpstring "github.com/szks-repo/go-php-functions/string"
 
 	"github.com/szks-repo/gosmarty/object"
 )
 
 type Modifier func(object.Object, ...any) object.Object
-
-var msgPrinter = message.NewPrinter(language.Japanese)
 
 // Builtin variable modifiers
 // https://www.smarty.net/docs/en/language.modifiers.tpl
@@ -55,7 +51,7 @@ var builtinModifiers = map[string]Modifier{
 		}
 
 		val := input.(*object.Number).Value
-		return &object.String{Value: msgPrinter.Sprint(number.Decimal(val))}
+		return &object.String{Value: phpstring.NumberFormat[float64](val)}
 	},
 	"upper": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {

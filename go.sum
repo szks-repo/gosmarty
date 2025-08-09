@@ -1,3 +1,5 @@
+github.com/szks-repo/go-php-functions v0.0.0-20250809153929-ada951e55b1d h1:/R04Zq++Nmqpk4R8nXoPZARmI8rEAMU/ylqoukQzowM=
+github.com/szks-repo/go-php-functions v0.0.0-20250809153929-ada951e55b1d/go.mod h1:LWVGr/BS1d3OWbWS9/sj8Qk6WTO2hXtUrcymhUyurHA=
 golang.org/x/exp v0.0.0-20250808145144-a408d31f581a h1:Y+7uR/b1Mw2iSXZ3G//1haIiSElDQZ8KWh0h+sZPG90=
 golang.org/x/exp v0.0.0-20250808145144-a408d31f581a/go.mod h1:rT6SFzZ7oxADUDx58pcaKFTcZ+inxAa9fTrYx/uVYwg=
 golang.org/x/text v0.28.0 h1:rhazDwis8INMIwQ4tpjLDzUhx6RlXqZNPEM0huQojng=
