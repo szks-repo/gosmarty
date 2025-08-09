@@ -10,5 +10,11 @@ type IfNode struct {
 	Alternative *ListNode   // 条件が偽の場合に実行されるノードリスト (else, elseif)
 }
 
-func (in *IfNode) TokenLiteral() string { return in.Token.Literal }
-func (in *IfNode) String() string       { /* デバッグ用の実装 */ return "if" }
+func (in *IfNode) TokenLiteral() string {
+	return in.Token.Literal
+}
+
+func (in *IfNode) String() string {
+	/* デバッグ用の実装 */
+	return "if"
+}
