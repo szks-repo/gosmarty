@@ -30,7 +30,7 @@ type Object interface {
 }
 
 // Goのネイティブな型をgosmartyのObjectに変換
-func newObjectFromAny(i any) (Object, error) {
+func NewObjectFromAny(i any) (Object, error) {
 	switch i := i.(type) {
 	case string:
 		return &String{Value: i}, nil
@@ -54,7 +54,7 @@ func newObjectFromAny(i any) (Object, error) {
 	case []any:
 		elements := make([]Object, len(i))
 		for idx, elem := range i {
-			obj, err := newObjectFromAny(elem)
+			obj, err := NewObjectFromAny(elem)
 			if err != nil {
 				return nil, err
 			}
@@ -64,7 +64,7 @@ func newObjectFromAny(i any) (Object, error) {
 	case map[string]any:
 		pairs := make(map[string]Object)
 		for key, val := range i {
-			obj, err := newObjectFromAny(val)
+			obj, err := NewObjectFromAny(val)
 			if err != nil {
 				return nil, err
 			}

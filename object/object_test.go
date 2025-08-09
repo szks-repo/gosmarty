@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_newObjectFromAny(t *testing.T) {
+func TestNewObjectFromAny(t *testing.T) {
 	t.Parallel()
 
 	type (
@@ -59,7 +59,7 @@ func Test_newObjectFromAny(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			got, err := newObjectFromAny(tt.anyVal)
+			got, err := NewObjectFromAny(tt.anyVal)
 			if err != nil && !tt.wantErr {
 				t.Error(err)
 			} else {

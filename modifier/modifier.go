@@ -1,4 +1,4 @@
-package eval
+package modifier
 
 import (
 	"strings"
@@ -36,7 +36,7 @@ type Modifier func(object.Object, ...any) object.Object
 // - unescape
 // - upper
 // - wordwrap
-var builtinModifiers = map[string]Modifier{
+var Registry = map[string]Modifier{
 	"nl2br": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{} // またはエラーオブジェクト
@@ -88,4 +88,8 @@ var builtinModifiers = map[string]Modifier{
 		str := input.(*object.String).Value
 		return &object.String{Value: str + "_test1"}
 	},
+}
+
+func Register(mod Modifier) error {
+	panic("TODO")
 }
