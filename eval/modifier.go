@@ -10,12 +10,38 @@ import (
 	"github.com/szks-repo/gosmarty/object"
 )
 
-type Modifier func(obj object.Object) object.Object
+type Modifier func(object.Object, ...any) object.Object
 
 var msgPrinter = message.NewPrinter(language.Japanese)
 
+// Builtin variable modifiers
+// https://www.smarty.net/docs/en/language.modifiers.tpl
+// - capitalize
+// - cat
+// - count_characters
+// - count_paragraphs
+// - count_sentences
+// - count_words
+// - date_format
+// - default
+// - escape
+// - from_charset
+// - indent
+// - lower
+// - nl2br
+// - regex_replace
+// - replace
+// - spacify
+// - string_format
+// - strip
+// - strip_tags
+// - to_charset
+// - truncate
+// - unescape
+// - upper
+// - wordwrap
 var builtinModifiers = map[string]Modifier{
-	"nl2br": func(input object.Object) object.Object {
+	"nl2br": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{} // またはエラーオブジェクト
 		}
@@ -23,7 +49,7 @@ var builtinModifiers = map[string]Modifier{
 		str := input.(*object.String).Value
 		return &object.String{Value: strings.ReplaceAll(str, "\n", "<br>")}
 	},
-	"number_format": func(input object.Object) object.Object {
+	"number_format": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.NumberType {
 			return &object.String{}
 		}
@@ -31,21 +57,21 @@ var builtinModifiers = map[string]Modifier{
 		val := input.(*object.Number).Value
 		return &object.String{Value: msgPrinter.Sprint(number.Decimal(val))}
 	},
-	"upper": func(input object.Object) object.Object {
+	"upper": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{}
 		}
 
 		return &object.String{Value: strings.ToUpper(input.Inspect())}
 	},
-	"lower": func(input object.Object) object.Object {
+	"lower": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{}
 		}
 
 		return &object.String{Value: strings.ToLower(input.Inspect())}
 	},
-	"devtest1": func(input object.Object) object.Object {
+	"devtest1": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{Value: ""}
 		}
