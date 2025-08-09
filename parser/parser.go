@@ -1,4 +1,3 @@
-// gosmarty/parser/parser.go
 package parser
 
 import (
@@ -22,7 +21,6 @@ func New(l *lexer.Lexer) *Parser {
 		l:      l,
 		errors: []string{},
 	}
-
 	p.nextToken()
 	p.nextToken()
 	return p
@@ -37,7 +35,6 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-// ParseProgram はパース処理を開始し、*ast.Tree を返します。
 func (p *Parser) ParseProgram() *ast.Tree {
 	tree := &ast.Tree{
 		Root: &ast.ListNode{Nodes: []ast.Node{}},
@@ -49,9 +46,9 @@ func (p *Parser) ParseProgram() *ast.Tree {
 		case token.TEXT:
 			node = p.parseTextNode()
 		case token.LDELIM:
-			node = p.parseActionNode()
+			// '{' を見つけたら、次のトークンを覗き見てどのタグか判断する
+			node = p.parseTag()
 		default:
-			// LDELIMでもTEXTでもないトークンは無視して進む
 			p.nextToken()
 			continue
 		}
@@ -69,138 +66,141 @@ func (p *Parser) parseTextNode() *ast.TextNode {
 	return node
 }
 
-// parseActionNode は {$...} をパースします
-func (p *Parser) parseActionNode() ast.Node {
-	// 現在のトークンは LDELIM ({)
-	node := &ast.ActionNode{Token: p.curToken}
-
-	p.nextToken() // { を消費
-
-	// タグの中身をパース
-	switch p.curToken.Type {
+// parseTag は `{` の次のトークンを見て、どの構文か判断し、パースを振り分ける
+func (p *Parser) parseTag() ast.Node {
+	switch p.peekToken.Type {
 	case token.DOLLAR:
-		node.Pipe = p.parsePipe()
-	case token.IF,token.ENDIF,token.ELSEIF,token.ELSE:
-		return p.parseIfNode()
+		return p.parseVariableTag()
+	case token.IF:
+		return p.parseIfTag()
 	default:
-		msg := fmt.Sprintf("unexpected token in tag: got %s", p.curToken.Type)
-		p.errors = append(p.errors, msg)
+		// エラー処理：不明なタグ
+		p.errors = append(p.errors, fmt.Sprintf("unknown tag type: %s", p.peekToken.Type))
+		p.nextToken() // エラーリカバリーのため進める
 		return nil
+	}
+}
+
+// parseVariableTag は {$name} のような変数をパースする
+func (p *Parser) parseVariableTag() *ast.ActionNode {
+	// curTokenは '{'
+	node := &ast.ActionNode{Token: p.curToken}
+	p.nextToken() // '{' を消費 -> curTokenは '$'
+
+	p.nextToken() // '$' を消費 -> curTokenは 識別子
+	if !p.curTokenIs(token.IDENT) {
+		p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+		return nil
+	}
+	node.Pipe = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	p.nextToken() // 識別子を消費
+
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM, got %s", p.curToken.Type))
+		return nil
+	}
+	p.nextToken() // '}' を消費
+	return node
+}
+
+// parseIfTag は {if ...} ブロック全体をパースする
+func (p *Parser) parseIfTag() *ast.IfNode {
+	// curTokenは '{'
+	p.nextToken() // '{' を消費 -> curTokenは 'if'
+	node := &ast.IfNode{Token: p.curToken}
+	p.nextToken() // 'if' を消費 -> curTokenは '$'
+
+	// 1. 条件式のパース
+	if p.curToken.Type != token.DOLLAR {
+		p.errors = append(p.errors, "expected variable expression for if condition")
+		return nil
+	}
+	p.nextToken() // '$' を消費 -> curTokenは 識別子
+	if !p.curTokenIs(token.IDENT) {
+		p.errors = append(p.errors, fmt.Sprintf("expected IDENT for condition, got %s", p.curToken.Type))
+		return nil
+	}
+	node.Condition = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	p.nextToken() // 識別子を消費
+
+	// 2. {if ...} の閉じ '}' を消費
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM after if condition, got %s", p.curToken.Type))
+		return nil
+	}
+	p.nextToken() // '}' を消費
+
+	// 3. Consequence (then節) のパース
+	node.Consequence = p.parseBlockUntil(token.ELSE, token.ENDIF)
+
+	// 4. Alternative (else節) のパース (存在すれば)
+	if p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ELSE) {
+		p.nextToken() // '{' を消費
+		p.nextToken() // 'else' を消費
+
+		if !p.curTokenIs(token.RDELIM) {
+			p.errors = append(p.errors, "expected RDELIM for else tag")
+			return nil
+		}
+		p.nextToken() // '}' を消費
+
+		node.Alternative = p.parseBlockUntil(token.ENDIF)
 	}
 
-	// } を期待
-	if !p.curTokenIs(token.RDELIM) {
-		msg := fmt.Sprintf("expected RDELIM, got %s instead", p.curToken.Type)
-		p.errors = append(p.errors, msg)
+	// 5. 終了タグ {/if} を消費
+	if !(p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ENDIF)) {
+		p.errors = append(p.errors, "expected {/if} tag")
 		return nil
 	}
-	p.nextToken() // } を消費
+	p.nextToken() // '{' を消費
+	p.nextToken() // '/if' を消費
+
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, "expected RDELIM for /if tag")
+		return nil
+	}
+	p.nextToken() // '}' を消費
 
 	return node
 }
 
-// parsePipe は $name のような式をパースします
-func (p *Parser) parsePipe() ast.Node {
-	// 現在のトークンは $
-	p.nextToken() // $ を消費
+// parseBlockUntil は指定された終了トークンが見つかるまでノードをパースし続ける
+func (p *Parser) parseBlockUntil(endTokens ...token.TokenType) *ast.ListNode {
+	block := &ast.ListNode{Nodes: []ast.Node{}}
 
-	if !p.curTokenIs(token.IDENT) {
-		return nil // エラー処理
+	for {
+		if p.curTokenIs(token.EOF) {
+			p.errors = append(p.errors, "unexpected EOF, unclosed block")
+			return block
+		}
+		if p.curTokenIs(token.LDELIM) {
+			for _, endToken := range endTokens {
+				if p.peekTokenIs(endToken) {
+					return block // 終了トークンを見つけたのでブロックを返す
+				}
+			}
+		}
+
+		var stmt ast.Node
+		switch p.curToken.Type {
+		case token.TEXT:
+			stmt = p.parseTextNode()
+		case token.LDELIM:
+			stmt = p.parseTag()
+		default:
+			p.nextToken()
+			continue
+		}
+		if stmt != nil {
+			block.Nodes = append(block.Nodes, stmt)
+		}
 	}
-
-	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-
-	p.nextToken() // 識別子を消費
-	return ident
 }
 
-// ... (その他のヘルパー関数 curTokenIs, peekTokenIs, expectPeek, peekError は変更なし) ...
-// NOTE: curTokenIs, peekTokenIs, expectPeek, peekError といった
-// ヘルパー関数は変更がないため、元のコードをそのまま使用してください。
 func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
-}
-
-func (p *Parser) expectPeek(t token.TokenType) bool {
-	if p.peekTokenIs(t) {
-		p.nextToken()
-		return true
-	} else {
-		p.peekError(t)
-		return false
-	}
-}
-
-func (p *Parser) peekError(t token.TokenType) {
-	msg := fmt.Sprintf("expected next token to be %s, got %s(%s) instead",
-		t, p.peekToken.Type, p.peekToken.Literal)
-	p.errors = append(p.errors, msg)
-}
-
-func (p *Parser) parseIfNode() *ast.IfNode {
-	// 現在のトークンは 'if'
-	node := &ast.IfNode{Token: p.curToken}
-
-	p.nextToken() // 'if' を消費
-
-	// --- 条件式のパース ---
-	// ここでは簡単のため、{$foo} のみ対応
-	if p.curToken.Type == token.DOLLAR {
-		node.Condition = p.parsePipe()
-	} else {
-		// エラー処理
-		return nil
-	}
-
-	// --- Consequence (then節) のパース ---
-	node.Consequence = &ast.ListNode{}
-	// {/if} または {else} が来るまでパースを続ける
-	for !p.curTokenIs(token.ENDIF) && !p.curTokenIs(token.ELSE) && !p.curTokenIs(token.EOF) {
-		var stmt ast.Node
-		switch p.curToken.Type {
-		case token.TEXT:
-			stmt = p.parseTextNode()
-		case token.LDELIM:
-			// {if} の中にも {$var} のようなタグは書ける
-			stmt = p.parseActionNode()
-		default:
-			p.nextToken()
-			continue
-		}
-		node.Consequence.Nodes = append(node.Consequence.Nodes, stmt)
-	}
-
-	// --- Alternative (else節) のパース ---
-	if p.curTokenIs(token.ELSE) {
-		p.nextToken() // 'else' を消費
-
-		node.Alternative = &ast.ListNode{}
-		// {/if} が来るまでパースを続ける
-		for !p.curTokenIs(token.ENDIF) && !p.curTokenIs(token.EOF) {
-			var stmt ast.Node
-			switch p.curToken.Type {
-			case token.TEXT:
-				stmt = p.parseTextNode()
-			case token.LDELIM:
-				stmt = p.parseActionNode()
-			default:
-				p.nextToken()
-				continue
-			}
-			node.Alternative.Nodes = append(node.Alternative.Nodes, stmt)
-		}
-	}
-
-	if !p.curTokenIs(token.ENDIF) {
-		// {/if} がない場合はエラー
-		p.peekError(token.ENDIF)
-		return nil
-	}
-	p.nextToken() // {/if} を消費
-
-	return node
 }

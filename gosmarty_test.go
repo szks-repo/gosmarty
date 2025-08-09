@@ -80,7 +80,8 @@ func TestIfStatements(t *testing.T) {
 	for _, tt := range tests {
 		gsm, err := New("").Parse(tt.input)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			continue
 		}
 
 		env := object.NewEnvironment()
