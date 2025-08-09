@@ -86,6 +86,8 @@ func (l *Lexer) nextTokenInTag() token.Token {
 		tok = newToken(token.DOLLAR, l.ch)
 	case '|':
 		tok = newToken(token.PIPE, l.ch)
+	case '.':
+		tok = newToken(token.DOT, l.ch)
 	case '"', '\'':
 		tok.Type = token.STRING
 		tok.Literal = l.readString(l.ch)

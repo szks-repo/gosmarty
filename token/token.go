@@ -26,6 +26,7 @@ const (
 	IDENT  = "IDENT" // 変数名など (例: foo, bar)
 	DOLLAR = "$"
 	PIPE   = "|"
+	DOT    = "."
 	STRING = "STRING" // "foo" or 'bar'
 	NUMBER = "NUMBER" // 12345
 	TEXT   = "TEXT"   // デリミタの外にあるプレーンなテキスト
