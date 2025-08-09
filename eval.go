@@ -3,6 +3,10 @@ package gosmarty
 import (
 	"strings"
 
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
+	"golang.org/x/text/number"
+
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/object"
 )
@@ -92,14 +96,24 @@ func isTruthy(obj object.Object) bool {
 // Builtin はテンプレート内で使用可能なGoの関数の型
 type Builtin func(input object.Object) object.Object
 
+var msgPrinter = message.NewPrinter(language.Japanese)
+
 var builtins = map[string]Builtin{
 	"nl2br": func(input object.Object) object.Object {
 		if input.Type() != object.StringType {
-			return &object.String{Value: ""} // またはエラーオブジェクト
+			return &object.String{} // またはエラーオブジェクト
 		}
 
 		str := input.(*object.String).Value
 		return &object.String{Value: strings.ReplaceAll(str, "\n", "<br>")}
+	},
+	"number_format": func(input object.Object) object.Object {
+		if input.Type() != object.NumberType {
+			return &object.String{}
+		}
+
+		val := input.(*object.Number).Value
+		return &object.String{Value: msgPrinter.Sprint(number.Decimal(val))}
 	},
 	"devtest1": func(input object.Object) object.Object {
 		if input.Type() != object.StringType {

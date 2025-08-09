@@ -60,6 +60,13 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "This is number test: -777.",
 		},
+		{
+			input: `This is number test: {$num | number_format}.`,
+			env: Must(object.NewEnvironment(
+				object.WithVariable("num", 777777777),
+			)),
+			want: "This is number test: 777,777,777.",
+		},
 	}
 
 	for i, tt := range tests {
