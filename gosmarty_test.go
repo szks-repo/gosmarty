@@ -35,6 +35,24 @@ func TestVariableEvaluation(t *testing.T) {
 			},
 			want: "Hello, Go Smarty!",
 		},
+		{
+			input: `{$contents | nl2br}`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("contents", &object.String{Value: "Hello1\nHello2\nHello3"})
+				return env
+			},
+			want: "Hello1<br>Hello2<br>Hello3",
+		},
+		{
+			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
+			envFactory: func() *object.Environment {
+				env := object.NewEnvironment()
+				env.Set("name", &object.String{Value: "Smarty"})
+				return env
+			},
+			want: "Smarty_test1_test1_test1 1|2|3|4",
+		},
 	}
 
 	for i, tt := range tests {

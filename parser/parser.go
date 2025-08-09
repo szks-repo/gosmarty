@@ -70,7 +70,8 @@ func (p *Parser) parseTextNode() *ast.TextNode {
 func (p *Parser) parseTag() ast.Node {
 	switch p.peekToken.Type {
 	case token.DOLLAR:
-		return p.parseVariableTag()
+		// return p.parseVariableTag()  add: Pipeline
+		return p.parsePipeLineTag()
 	case token.IF:
 		return p.parseIfTag()
 	default:
@@ -203,4 +204,62 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
+}
+
+/////
+
+// parseVariableTag を parsePipeLineTag に改名・修正
+func (p *Parser) parsePipeLineTag() ast.Node {
+	// curTokenは '{'
+	p.nextToken() // '{' を消費 -> curTokenは '$'
+
+	// 最初に左辺の式をパース
+	left := p.parsePrimaryExpr()
+
+	// '|' が続く限りパイプラインを構築
+	for p.curTokenIs(token.PIPE) {
+		pipeToken := p.curToken
+		p.nextToken() // '|' を消費
+
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, "expected modifier function name after '|'")
+			return nil
+		}
+
+		// 新しいPipeNodeを作成し、それまでの式を左辺に設定
+		left = &ast.PipeNode{
+			Token:    pipeToken,
+			Left:     left,
+			Function: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
+		}
+		p.nextToken() // 関数名を消費
+	}
+
+	// 最終的な式をActionNodeに格納
+	actionNode := &ast.ActionNode{Token: token.Token{Type: token.LDELIM, Literal: "{"}}
+	actionNode.Pipe = left
+
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM, got %s", p.curToken.Type))
+		return nil
+	}
+	p.nextToken() // '}' を消費
+	return actionNode
+}
+
+// パイプラインの元となる最初の式をパースするヘルパー
+func (p *Parser) parsePrimaryExpr() ast.Node {
+	// 今は {$name} のみサポート
+	if !p.curTokenIs(token.DOLLAR) {
+		return nil
+	}
+	p.nextToken() // '$' を消費
+
+	if !p.curTokenIs(token.IDENT) {
+		p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+		return nil
+	}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	p.nextToken() // 識別子を消費
+	return ident
 }
