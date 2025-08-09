@@ -10,6 +10,11 @@ import (
 	"github.com/szks-repo/gosmarty/parser"
 )
 
+type GoSmarty struct {
+	name string
+	tree *ast.Tree
+}
+
 func New(name string) *GoSmarty {
 	return &GoSmarty{
 		name: name,
@@ -24,15 +29,8 @@ func (gsm *GoSmarty) Parse(input string) (*GoSmarty, error) {
 		return nil, errors.New(strings.Join(errs, "\n"))
 	}
 
-	return &GoSmarty{
-		name: gsm.name,
-		tree: tree,
-	}, nil
-}
-
-type GoSmarty struct {
-	name string
-	tree *ast.Tree
+	gsm.tree = tree
+	return gsm, nil
 }
 
 func (gsm *GoSmarty) Exec(env *object.Environment) object.Object {
