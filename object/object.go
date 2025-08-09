@@ -73,7 +73,7 @@ func newObjectFromAny(i any) (Object, error) {
 		return &Map{Pairs: pairs}, nil
 	// todo: support go stdlib package types
 	// case *big.Rat:
-	// case *big.Int:	
+	// case *big.Int:
 	default:
 		rv := reflect.ValueOf(i)
 		// underlying types or structs
