@@ -31,6 +31,13 @@ var builtinModifiers = map[string]Modifier{
 		val := input.(*object.Number).Value
 		return &object.String{Value: msgPrinter.Sprint(number.Decimal(val))}
 	},
+	"upper": func(input object.Object) object.Object {
+		if input.Type() != object.StringType {
+			return &object.String{}
+		}
+
+		return &object.String{Value: strings.ToUpper(input.Inspect())}
+	},
 	"devtest1": func(input object.Object) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{Value: ""}
