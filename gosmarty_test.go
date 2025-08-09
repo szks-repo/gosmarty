@@ -13,57 +13,57 @@ func TestVariableEvaluation(t *testing.T) {
 
 	tests := []struct {
 		input string
-		env   *object.Environment
+		env   *Environment
 		want  string
 	}{
 		{
 			input: `Hello, {$name}!`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
 			)),
 			want: "Hello, Smarty!",
 		},
 		{
 			input: `Hello, {$first_name} {$given_name}!`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("first_name", "Go"),
-				object.WithVariable("given_name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("first_name", "Go"),
+				WithVariable("given_name", "Smarty"),
 			)),
 			want: "Hello, Go Smarty!",
 		},
 		{
 			input: `{$contents | nl2br}`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("contents", "Hello1\nHello2\nHello3"),
+			env: Must(NewEnvironment(
+				WithVariable("contents", "Hello1\nHello2\nHello3"),
 			)),
 			want: "Hello1<br>Hello2<br>Hello3",
 		},
 		{
 			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
 			)),
 			want: "Smarty_test1_test1_test1 1|2|3|4",
 		},
 		// Numbers
 		{
 			input: `This is number test: {$num}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("num", 777),
+			env: Must(NewEnvironment(
+				WithVariable("num", 777),
 			)),
 			want: "This is number test: 777.",
 		},
 		{
 			input: `This is number test: {$num}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("num", -777),
+			env: Must(NewEnvironment(
+				WithVariable("num", -777),
 			)),
 			want: "This is number test: -777.",
 		},
 		{
 			input: `This is number test: {$num | number_format}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("num", 777777777),
+			env: Must(NewEnvironment(
+				WithVariable("num", 777777777),
 			)),
 			want: "This is number test: 777,777,777.",
 		},
@@ -94,20 +94,20 @@ func TestComment(t *testing.T) {
 
 	tests := []struct {
 		input string
-		env   *object.Environment
+		env   *Environment
 		want  string
 	}{
 		{
 			input: `Hello,{* Comment *} {$name}!`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
 			)),
 			want: "Hello, Smarty!",
 		},
 		{
 			input: `Hello,{* Comment *}{$name}!`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
 			)),
 			want: "Hello,Smarty!",
 		},
@@ -119,8 +119,8 @@ Note:
   - Three			
 *}
 <span>Hello</span>`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("name", "Smarty"),
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
 			)),
 			want: "\n<span>Hello</span>",
 		},
@@ -153,71 +153,71 @@ func TestIfStatements(t *testing.T) {
 	// テストケースを定義
 	tests := []struct {
 		input    string
-		env      *object.Environment
+		env      *Environment
 		expected string
 	}{
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("is_logged_in", true),
-				object.WithVariable("name", "Suzuki"),
+			env: Must(NewEnvironment(
+				WithVariable("is_logged_in", true),
+				WithVariable("name", "Suzuki"),
 			)),
 			expected: "Welcome, Suzuki!",
 		},
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("is_logged_in", false),
-				object.WithVariable("name", "Suzuki"),
+			env: Must(NewEnvironment(
+				WithVariable("is_logged_in", false),
+				WithVariable("name", "Suzuki"),
 			)),
 			expected: "Hello, Guest.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("item_count", "exists"), // 空文字以外はtrue
+			env: Must(NewEnvironment(
+				WithVariable("item_count", "exists"), // 空文字以外はtrue
 			)),
 			expected: "Your item is available.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("item_count", ""), // 空文字はfalse
+			env: Must(NewEnvironment(
+				WithVariable("item_count", ""), // 空文字はfalse
 			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("item_count", nil), // nilはfalse
+			env: Must(NewEnvironment(
+				WithVariable("item_count", nil), // nilはfalse
 			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("item_count", 0), // 0はfalse
+			env: Must(NewEnvironment(
+				WithVariable("item_count", 0), // 0はfalse
 			)),
 			expected: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("item_count", 1), // 0以外true
+			env: Must(NewEnvironment(
+				WithVariable("item_count", 1), // 0以外true
 			)),
 			expected: "Your item is available.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("show_block", true),
+			env: Must(NewEnvironment(
+				WithVariable("show_block", true),
 			)),
 			expected: "This block is shown.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
-			env: Must(object.NewEnvironment(
-				object.WithVariable("show_block", false),
+			env: Must(NewEnvironment(
+				WithVariable("show_block", false),
 			)),
 			expected: "",
 		},

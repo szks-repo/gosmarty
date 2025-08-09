@@ -1,7 +1,8 @@
-package eval
+package gosmarty
 
 import (
 	"github.com/szks-repo/gosmarty/ast"
+	"github.com/szks-repo/gosmarty/modifier"
 	"github.com/szks-repo/gosmarty/object"
 )
 
@@ -10,7 +11,7 @@ var (
 )
 
 // Eval はASTノードを評価する中心的な関数
-func Eval(node ast.Node, env *object.Environment) object.Object {
+func Eval(node ast.Node, env *Environment) object.Object {
 	switch node := node.(type) {
 	// ノードのリスト
 	case *ast.ListNode:
@@ -37,7 +38,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 }
 
 // evalNodes はノードのスライスを評価し、結果を連結する
-func evalNodes(nodes []ast.Node, env *object.Environment) object.Object {
+func evalNodes(nodes []ast.Node, env *Environment) object.Object {
 	var result string
 	for _, node := range nodes {
 		evaluated := Eval(node, env)
@@ -50,7 +51,7 @@ func evalNodes(nodes []ast.Node, env *object.Environment) object.Object {
 }
 
 // evalIdentifier は環境から変数の値を探して返す
-func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+func evalIdentifier(node *ast.Identifier, env *Environment) object.Object {
 	if val, ok := env.Get(node.Value); ok {
 		return val
 	}
@@ -59,7 +60,7 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 	return &object.String{Value: ""}
 }
 
-func evalIfNode(in *ast.IfNode, env *object.Environment) object.Object {
+func evalIfNode(in *ast.IfNode, env *Environment) object.Object {
 	condition := Eval(in.Condition, env)
 
 	if isTruthy(condition) {
@@ -87,12 +88,12 @@ func isTruthy(obj object.Object) bool {
 	}
 }
 
-func evalPipeNode(node *ast.PipeNode, env *object.Environment) object.Object {
+func evalPipeNode(node *ast.PipeNode, env *Environment) object.Object {
 	// 1. 左辺を評価する
 	left := Eval(node.Left, env)
 
 	funcName := node.Function.Value
-	fn, ok := builtinModifiers[funcName]
+	fn, ok := modifier.Registry[funcName]
 	if !ok {
 		// エラー処理: 未定義の関数
 		// ここでは空文字を返す

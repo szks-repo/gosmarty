@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/szks-repo/gosmarty/ast"
-	"github.com/szks-repo/gosmarty/eval"
 	"github.com/szks-repo/gosmarty/lexer"
 	"github.com/szks-repo/gosmarty/object"
 	"github.com/szks-repo/gosmarty/parser"
@@ -34,6 +33,6 @@ func (gsm *GoSmarty) Parse(input string) (*GoSmarty, error) {
 	return gsm, nil
 }
 
-func (gsm *GoSmarty) Exec(env *object.Environment) object.Object {
-	return eval.Eval(gsm.tree.Root, env)
+func (gsm *GoSmarty) Exec(env *Environment) object.Object {
+	return Eval(gsm.tree.Root, env)
 }
