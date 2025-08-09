@@ -18,5 +18,3 @@ func (in *IfNode) String() string {
 	/* デバッグ用の実装 */
 	return "if"
 }
-
-//workflow test
