@@ -42,7 +42,7 @@ func TestIfStatements(t *testing.T) {
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
 			envSetup: map[string]object.Object{
-				"is_logged_in": object.TRUE, // 真
+				"is_logged_in": object.TRUE,
 				"name":         &object.String{Value: "Suzuki"},
 			},
 			expected: "Welcome, Suzuki!",
@@ -50,30 +50,45 @@ func TestIfStatements(t *testing.T) {
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
 			envSetup: map[string]object.Object{
-				"is_logged_in": object.FALSE, // 偽
+				"is_logged_in": object.FALSE,
 				"name":         &object.String{Value: "Suzuki"},
 			},
 			expected: "Hello, Guest.",
 		},
 		{
-			input:    `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{"item_count": &object.String{Value: "exists"}}, // 空文字以外は真
+			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
+			envSetup: map[string]object.Object{
+				"item_count": &object.String{Value: "exists"}, // 空文字以外はtrue
+			},
 			expected: "Your item is available.",
 		},
 		{
-			input:    `Your item is {if $item_count}available{else}sold out{/if}.`,
-			envSetup: map[string]object.Object{"item_count": &object.String{Value: ""}}, // 空文字は偽
+			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
+			envSetup: map[string]object.Object{
+				"item_count": &object.String{Value: ""}, // 空文字はfalse
+			},
 			expected: "Your item is sold out.",
 		},
 		{
-			input:    `{if $show_block}This block is shown.{/if}`,
-			envSetup: map[string]object.Object{"show_block": object.TRUE},
+			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
+			envSetup: map[string]object.Object{
+				"item_count": &object.Null{}, // nullはfalse
+			},
+			expected: "Your item is sold out.",
+		},
+		{
+			input: `{if $show_block}This block is shown.{/if}`,
+			envSetup: map[string]object.Object{
+				"show_block": object.TRUE,
+			},
 			expected: "This block is shown.",
 		},
 		{
-			input:    `{if $show_block}This block is shown.{/if}`, // else節がない場合
-			envSetup: map[string]object.Object{"show_block": object.FALSE},
-			expected: "", // 何も出力されない
+			input: `{if $show_block}This block is shown.{/if}`,
+			envSetup: map[string]object.Object{
+				"show_block": object.FALSE,
+			},
+			expected: "",
 		},
 	}
 
