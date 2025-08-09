@@ -76,6 +76,8 @@ func (l *Lexer) nextTokenInTag() token.Token {
 			l.readChar()
 			tok.Type = token.COMMENT
 			tok.Literal = l.readComment()
+			l.state = stateText // ここでstateTextに戻す
+			return tok
 		} else {
 			tok = newToken(token.LDELIM, l.ch)
 		}
