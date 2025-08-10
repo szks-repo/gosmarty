@@ -11,8 +11,8 @@ This project aims to provide a Go-native implementation of the popular PHP templ
 | Feature                | Syntax Example                                       | Status      |
 | ---------------------- | ---------------------------------------------------- | ----------- |
 | Variable Rendering     | `{$name}`                                            | ✅ |
-| Record Variable        | `{$user.name}`                                       | ❌ |
-| Array Variable        |  `{$users[0].name}`                                   | ❌ |
+| Field Access           | `{$user.name}`                                       | ❌ |
+| Array Access           |  `{$users[0].name}`                                   | ❌ |
 | Variable Modifiers     | `{$title\|upper\|escape}`                            | ✅ |
 | If/Else Statements     | `{if $isLoggedIn}Welcome!{else}Please log in.{/if}`  | ✅ |
 |                        | `{if $num > 5}true{else}false{/if}`                  | ❌ |
