@@ -23,13 +23,15 @@ const (
 	COMMENT    = "COMMENT"  // {* ... *}
 
 	// 識別子 + リテラル
-	IDENT  = "IDENT" // 変数名など (例: foo, bar)
-	DOLLAR = "$"
-	PIPE   = "|"
-	DOT    = "."
-	STRING = "STRING" // "foo" or 'bar'
-	NUMBER = "NUMBER" // 12345
-	TEXT   = "TEXT"   // デリミタの外にあるプレーンなテキスト
+	IDENT    = "IDENT" // 変数名など (例: foo, bar)
+	DOLLAR   = "$"
+	PIPE     = "|"
+	DOT      = "."
+	LBRACKET = "["
+	RBRACKET = "]"
+	STRING   = "STRING" // "foo" or 'bar'
+	NUMBER   = "NUMBER" // 12345
+	TEXT     = "TEXT"   // デリミタの外にあるプレーンなテキスト
 
 	// 演算子
 	ASSIGN   = "="
