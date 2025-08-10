@@ -33,6 +33,15 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "Hello, Go Smarty!",
 		},
+		{
+			input: `Hello, {$name}! {$bio}{$bio2}`,
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
+				WithVariable("bio", Ptr("I am Gopher!")),
+				WithVariable("bio2", new(string)),
+			)),
+			want: "Hello, Smarty! I am Gopher!",
+		},
 		// Numbers
 		{
 			input: `This is number test: {$num}.`,

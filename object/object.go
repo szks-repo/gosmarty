@@ -23,6 +23,7 @@ const (
 	ArrayType
 	MapType
 	TimeType
+	OptionalType
 )
 
 type Object interface {
@@ -34,8 +35,12 @@ type Object interface {
 // Goのネイティブな型をgosmartyのObjectに変換
 func NewObjectFromAny(i any) (Object, error) {
 	switch i := i.(type) {
+	case nil:
+		return NULL, nil
 	case string:
-		return &String{Value: i}, nil
+		return NewString(i), nil
+	case *string:
+		return NewOptional(NewString(*i)), nil
 	case int:
 		return &Number{Value: float64(i)}, nil
 	case int64:
@@ -51,8 +56,6 @@ func NewObjectFromAny(i any) (Object, error) {
 			return TRUE, nil
 		}
 		return FALSE, nil
-	case nil:
-		return NULL, nil
 	case []string:
 		values := make([]Object, len(i))
 		for idx, elem := range i {
@@ -81,6 +84,8 @@ func NewObjectFromAny(i any) (Object, error) {
 		return &Map{Value: pairs}, nil
 	case time.Time:
 		return NewTime(i), nil
+	case *time.Time:
+		return NewTime(*i), nil
 	// todo: support go stdlib package types
 	// case *big.Rat:
 	// case *big.Int:

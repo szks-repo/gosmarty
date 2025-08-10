@@ -47,8 +47,15 @@ func evalNodes(nodes []ast.Node, env *Environment) object.Object {
 	for _, node := range nodes {
 		evaluated := Eval(node, env)
 		// 評価結果がNULLでなければ、文字列として連結する
-		if evaluated != nil && evaluated.Type() != object.NullType {
-			result += evaluated.Inspect()
+	L:
+		if evaluated != nil {
+			if evaluated.Type() == object.OptionalType {
+				evaluated = evaluated.(*object.Optional).Unwrap()
+				goto L
+			}
+			if evaluated.Type() != object.NullType {
+				result += evaluated.Inspect()
+			}
 		}
 	}
 	return object.NewString(result)
@@ -113,6 +120,11 @@ func isTruthy(obj object.Object) bool {
 		return len(obj.Value) > 0
 	case *object.Time:
 		return !obj.Value.IsZero()
+	case *object.Optional:
+		if obj.Some() {
+			return isTruthy(obj.Unwrap())
+		}
+		return false
 	default:
 		return true
 	}
