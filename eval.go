@@ -26,6 +26,8 @@ func Eval(node ast.Node, env *Environment) object.Object {
 	// 識別子 (変数)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+	case *ast.FieldAccess:
+		return evalFieldAccess(node, env)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
 	case *ast.IfNode:
@@ -53,6 +55,27 @@ func evalNodes(nodes []ast.Node, env *Environment) object.Object {
 // evalIdentifier は環境から変数の値を探して返す
 func evalIdentifier(node *ast.Identifier, env *Environment) object.Object {
 	if val, ok := env.GetVar(node.Value); ok {
+		return val
+	}
+
+	return NULL
+}
+
+func evalFieldAccess(node *ast.FieldAccess, env *Environment) object.Object {
+	// 1. 左辺を評価する (e.g., $user -> MapObject)
+	left := Eval(node.Left, env)
+
+	// 2. 左辺がMapでなければエラー (NULLを返す)
+	if left.Type() != object.MapType {
+		return NULL
+	}
+
+	// 3. Mapからプロパティを取得する
+	objMap := left.(*object.Map)
+	propName := node.Right.Value // (e.g., "id")
+
+	// 4. プロパティが存在すればその値を、なければNULLを返す
+	if val, ok := objMap.Pairs[propName]; ok {
 		return val
 	}
 

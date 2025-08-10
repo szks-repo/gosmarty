@@ -47,6 +47,17 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "This is number test: -777.",
 		},
+		// Field access
+		{
+			input: `id:{$user.id} name:{$user.name}`,
+			env: Must(NewEnvironment(
+				WithVariable("user", map[string]any{
+					"id":   "1",
+					"name": "Tanaka",
+				}),
+			)),
+			want: "id:1 name:Tanaka",
+		},
 	}
 
 	for i, tt := range tests {
