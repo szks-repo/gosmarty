@@ -3,6 +3,7 @@ package gosmarty
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/szks-repo/gosmarty/modifier"
 	"github.com/szks-repo/gosmarty/object"
@@ -67,11 +68,11 @@ func TestVariableEvaluation(t *testing.T) {
 					"rank":    3,
 					"balance": 1500000,
 					"metadata": map[string]any{
-						"created_at": "2024-01-02 15:04:06",
+						"created_at": time.Date(2024, 1, 3, 15, 4, 6, 0, time.UTC),
 					},
 				}),
 			)),
-			want: "id:1 name:Tanaka rank:3 balance:1,500,000 created_at:2024-01-02 15:04:06",
+			want: "id:1 name:Tanaka rank:3 balance:1,500,000 created_at:2024-01-03T15:04:06Z",
 		},
 		// Index access
 		{
