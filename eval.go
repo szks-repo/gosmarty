@@ -105,6 +105,10 @@ func isTruthy(obj object.Object) bool {
 		return obj.Value
 	case *object.Number:
 		return obj.Value != 0
+	case *object.Map:
+		return len(obj.Value) > 0
+	case *object.Array:
+		return len(obj.Value) > 0
 	default:
 		return true
 	}
