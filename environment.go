@@ -45,8 +45,16 @@ func WithVariable(name string, value any) EnvOption {
 	}
 }
 
-func WithModifier(name string, modifier func(a object.Object) object.Object) EnvOption {
-	return func(env *Environment) error {
-		panic("TODO")
+func WithStringVariable(name, value string) EnvOption {
+	return func(env *Environment) (err error) {
+		env.setVar(name, object.NewString(value))
+		return
+	}
+}
+
+func WithBoolVariable(name string, value bool) EnvOption {
+	return func(env *Environment) (err error) {
+		env.setVar(name, object.NewBool(value))
+		return
 	}
 }
