@@ -22,8 +22,7 @@ func New(name string) *GoSmarty {
 }
 
 func (gsm *GoSmarty) Parse(input string) (*GoSmarty, error) {
-	l := lexer.New(input)
-	p := parser.New(l)
+	p := parser.New(lexer.New(input))
 	tree := p.ParseProgram()
 	if errs := p.Errors(); len(errs) > 0 {
 		return nil, errors.New(strings.Join(errs, "\n"))
