@@ -31,20 +31,6 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "Hello, Go Smarty!",
 		},
-		{
-			input: `{$contents | nl2br}`,
-			env: Must(NewEnvironment(
-				WithVariable("contents", "Hello1\nHello2\nHello3"),
-			)),
-			want: "Hello1<br>Hello2<br>Hello3",
-		},
-		{
-			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
-			env: Must(NewEnvironment(
-				WithVariable("name", "Smarty"),
-			)),
-			want: "Smarty_test1_test1_test1 1|2|3|4",
-		},
 		// Numbers
 		{
 			input: `This is number test: {$num}.`,
@@ -59,6 +45,50 @@ func TestVariableEvaluation(t *testing.T) {
 				WithVariable("num", -777),
 			)),
 			want: "This is number test: -777.",
+		},
+	}
+
+	for i, tt := range tests {
+		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
+			gsm, err := New("test").Parse(tt.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			evaled := gsm.Exec(tt.env)
+			result, ok := evaled.(*object.String)
+			if !ok {
+				t.Error("isn't object.String")
+			}
+
+			if result.Value != tt.want {
+				t.Errorf("result has wrong value. got=%q, want=%q", result.Value, tt.want)
+			}
+		})
+	}
+}
+
+func TestModifier(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input string
+		env   *Environment
+		want  string
+	}{
+		{
+			input: `{$contents | nl2br}`,
+			env: Must(NewEnvironment(
+				WithVariable("contents", "Hello1\nHello2\nHello3"),
+			)),
+			want: "Hello1<br>Hello2<br>Hello3",
+		},
+		{
+			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
+			env: Must(NewEnvironment(
+				WithVariable("name", "Smarty"),
+			)),
+			want: "Smarty_test1_test1_test1 1|2|3|4",
 		},
 		{
 			input: `This is number test: {$num | number_format}.`,
