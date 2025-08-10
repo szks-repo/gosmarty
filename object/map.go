@@ -1,22 +1,24 @@
 package object
 
 import (
-	"bytes"
 	"strings"
 )
 
 // Map はマップ（ハッシュ）オブジェクトを表します。
 // Goのmapをラップします。
 type Map struct {
-	Pairs map[string]Object
+	Value map[string]Object
 }
 
-func (m *Map) Type() ObjectType { return MapType }
-func (m *Map) Inspect() string {
-	var out bytes.Buffer
+func (m *Map) Type() ObjectType {
+	return MapType
+}
 
-	pairs := []string{}
-	for key, value := range m.Pairs {
+func (m *Map) Inspect() string {
+	var out strings.Builder
+
+	var pairs []string
+	for key, value := range m.Value {
 		pairs = append(pairs, key+":"+value.Inspect())
 	}
 

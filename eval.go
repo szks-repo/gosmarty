@@ -106,7 +106,7 @@ func isTruthy(obj object.Object) bool {
 	case *object.Number:
 		return obj.Value != 0
 	default:
-		return true // NULLと空文字以外は真とみなす
+		return true
 	}
 }
 
