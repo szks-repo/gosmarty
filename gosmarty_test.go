@@ -129,7 +129,7 @@ func TestModifier(t *testing.T) {
 			env: Must(NewEnvironment(
 				WithVariable("contents", "Hello1\nHello2\nHello3"),
 			)),
-			want: "Hello1<br>Hello2<br>Hello3",
+			want: "Hello1<br />Hello2<br />Hello3",
 		},
 		{
 			input: `{$name | pipe_test | pipe_test | pipe_test} 1|2|3|4`,
