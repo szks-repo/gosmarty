@@ -81,6 +81,17 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "id[0]:1 id[1]:2 id[2]:3 id[3]:4",
 		},
+		{
+			input: `id:{$user.id} name:{$user.name} comment:{$user.comments[1] | upper}`,
+			env: Must(NewEnvironment(
+				WithVariable("user", map[string]any{
+					"id":       "1",
+					"name":     "Tanaka",
+					"comments": []string{"aaa", "bbb", "ccc"},
+				}),
+			)),
+			want: "id:1 name:Tanaka comment:BBB",
+		},
 	}
 
 	for i, tt := range tests {
