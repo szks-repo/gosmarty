@@ -99,7 +99,7 @@ func NewObjectFromAny(i any) (Object, error) {
 			}
 			return NewObjectFromAny(rv.Elem().Interface())
 		case reflect.String:
-			return &String{Value: rv.String()}, nil
+			return NewString(rv.String()), nil
 		case reflect.Int:
 			return &Number{Value: float64(rv.Int())}, nil
 		case reflect.Int64:
