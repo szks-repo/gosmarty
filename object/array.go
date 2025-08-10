@@ -1,22 +1,24 @@
 package object
 
 import (
-	"bytes"
 	"strings"
 )
 
 // Array は配列オブジェクトを表します。
 // Goのsliceをラップします。
 type Array struct {
-	Elements []Object
+	Value []Object
 }
 
-func (a *Array) Type() ObjectType { return ArrayType }
-func (a *Array) Inspect() string {
-	var out bytes.Buffer
+func (a *Array) Type() ObjectType {
+	return ArrayType
+}
 
-	elements := make([]string, len(a.Elements))
-	for i, e := range a.Elements {
+func (a *Array) Inspect() string {
+	var out strings.Builder
+
+	elements := make([]string, len(a.Value))
+	for i, e := range a.Value {
 		elements[i] = e.Inspect()
 	}
 

@@ -60,7 +60,7 @@ func NewObjectFromAny(i any) (Object, error) {
 			}
 			elements[idx] = obj
 		}
-		return &Array{Elements: elements}, nil
+		return &Array{Value: elements}, nil
 	case map[string]any:
 		pairs := make(map[string]Object)
 		for key, val := range i {
@@ -70,7 +70,7 @@ func NewObjectFromAny(i any) (Object, error) {
 			}
 			pairs[key] = obj
 		}
-		return &Map{Pairs: pairs}, nil
+		return &Map{Value: pairs}, nil
 	// todo: support go stdlib package types
 	// case *big.Rat:
 	// case *big.Int:
