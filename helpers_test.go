@@ -6,3 +6,7 @@ func Must[T any](v T, err error) T {
 	}
 	return v
 }
+
+func Ptr[T any](a T) *T {
+	return &a
+}
