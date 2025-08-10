@@ -282,8 +282,55 @@ func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 	}
 }
 
-// パイプラインの元となる最初の式をパースするヘルパー
 func (p *Parser) parsePrimaryExpr() ast.Node {
+	var left ast.Node
+
+	switch p.curToken.Type {
+	case token.DOLLAR:
+		p.nextToken() // '$' を消費
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+			return nil
+		}
+		left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		p.nextToken() // 識別子を消費
+	case token.NUMBER:
+		left = p.parseNumberLiteral()
+	default:
+		// 他のプライマリー式（文字列リテラルなど）もここに追加できる
+		p.errors = append(p.errors, fmt.Sprintf("unexpected token for primary expression: %s", p.curToken.Type))
+		return nil
+	}
+
+	for p.curTokenIs(token.DOT) {
+		dotToken := p.curToken
+		// '.' を消費
+		p.nextToken()
+
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT after '.', got %s", p.curToken.Type))
+			return nil
+		}
+
+		right := &ast.Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		}
+
+		left = &ast.FieldAccess{
+			Token: dotToken,
+			Left:  left,
+			Right: right,
+		}
+		// プロパティ識別子を消費
+		p.nextToken()
+	}
+
+	return left
+}
+
+// パイプラインの元となる最初の式をパースするヘルパー
+func (p *Parser) parsePrimaryExpr_backup() ast.Node {
 	switch p.curToken.Type {
 	case token.DOLLAR:
 		// '

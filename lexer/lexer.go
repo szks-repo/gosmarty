@@ -121,7 +121,7 @@ func (l *Lexer) readIdentifier() string {
 	if l.ch == '/' {
 		l.readChar()
 	}
-	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) || l.ch == '_' || l.ch == '.' || l.ch == '[' || l.ch == ']' {
+	for unicode.IsLetter(l.ch) || unicode.IsDigit(l.ch) || l.ch == '_' {
 		l.readChar()
 	}
 
