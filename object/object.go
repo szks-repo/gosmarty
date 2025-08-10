@@ -93,6 +93,11 @@ func NewObjectFromAny(i any) (Object, error) {
 		rv := reflect.ValueOf(i)
 		// underlying types or structs
 		switch rv.Kind() {
+		case reflect.Ptr:
+			if rv.IsNil() {
+				return NULL, nil
+			}
+			return NewObjectFromAny(rv.Elem().Interface())
 		case reflect.String:
 			return &String{Value: rv.String()}, nil
 		case reflect.Int:
@@ -106,7 +111,19 @@ func NewObjectFromAny(i any) (Object, error) {
 		case reflect.Bool:
 			return &Boolean{Value: rv.Bool()}, nil
 		case reflect.Struct:
+			pairs := make(map[string]Object)
+			rt := reflect.TypeOf(i)
+			for i := range rv.NumField() {
+				val := rv.Field(i)
+				typ := rt.Field(i)
+				valObj, err := NewObjectFromAny(val.Interface())
+				if err != nil {
+					return nil, fmt.Errorf("failed to convert field %s: %w", typ.Name, err)
+				}
+				pairs[typ.Name] = valObj
+			}
 			//todo
+			return &Map{Value: pairs}, nil
 		}
 
 		return nil, fmt.Errorf("unsupported type: %T", i)
