@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/szks-repo/gosmarty/modifier"
 	"github.com/szks-repo/gosmarty/object"
 )
 
@@ -50,12 +51,13 @@ func TestVariableEvaluation(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
-			gsm, err := New("test").Parse(tt.input)
+			gsm := New()
+			tmpl, err := gsm.Parse(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			evaled := gsm.Exec(tt.env)
+			evaled := tmpl.Execute(tt.env)
 			result, ok := evaled.(*object.String)
 			if !ok {
 				t.Error("isn't object.String")
@@ -72,9 +74,10 @@ func TestModifier(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		input string
-		env   *Environment
-		want  string
+		input     string
+		env       *Environment
+		want      string
+		modifiers map[string]modifier.Modifier
 	}{
 		{
 			input: `{$contents | nl2br}`,
@@ -84,10 +87,18 @@ func TestModifier(t *testing.T) {
 			want: "Hello1<br>Hello2<br>Hello3",
 		},
 		{
-			input: `{$name | devtest1 | devtest1 | devtest1} 1|2|3|4`,
+			input: `{$name | pipe_test | pipe_test | pipe_test} 1|2|3|4`,
 			env: Must(NewEnvironment(
 				WithVariable("name", "Smarty"),
 			)),
+			modifiers: map[string]modifier.Modifier{
+				"pipe_test": func(input object.Object, args ...any) object.Object {
+					if input.Type() == object.StringType {
+						return &object.String{Value: input.Inspect() + "_test1"}
+					}
+					return object.NULL
+				},
+			},
 			want: "Smarty_test1_test1_test1 1|2|3|4",
 		},
 		{
@@ -101,12 +112,17 @@ func TestModifier(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
-			gsm, err := New("test").Parse(tt.input)
+			gsm := New()
+			for modName, mod := range tt.modifiers {
+				RegisterModifier(modName, mod)
+			}
+
+			tmpl, err := gsm.Parse(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			evaled := gsm.Exec(tt.env)
+			evaled := tmpl.Execute(tt.env)
 			result, ok := evaled.(*object.String)
 			if !ok {
 				t.Error("isn't object.String")
@@ -158,12 +174,13 @@ Note:
 
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("case-%d", i+1), func(t *testing.T) {
-			gsm, err := New("test").Parse(tt.input)
+			gsm := New()
+			tmpl, err := gsm.Parse(tt.input)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			evaled := gsm.Exec(tt.env)
+			evaled := tmpl.Execute(tt.env)
 			result, ok := evaled.(*object.String)
 			if !ok {
 				t.Error("isn't object.String")
@@ -254,16 +271,16 @@ func TestIfStatements(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		gsm, err := New("").Parse(tt.input)
+		gsm := New()
+		tmpl, err := gsm.Parse(tt.input)
 		if err != nil {
-			t.Error(err)
-			continue
+			t.Fatal(err)
 		}
 
-		evaled := gsm.Exec(tt.env)
+		evaled := tmpl.Execute(tt.env)
 		result, ok := evaled.(*object.String)
 		if !ok {
-			t.Fatalf("evaluation result is not String. got=%T (%+v)", evaled, evaled)
+			t.Error("isn't object.String")
 		}
 
 		if result.Value != tt.expected {

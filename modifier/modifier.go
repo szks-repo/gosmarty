@@ -2,13 +2,14 @@ package modifier
 
 import (
 	"strings"
+	"sync"
 
 	phpstring "github.com/szks-repo/go-php-functions/string"
 
 	"github.com/szks-repo/gosmarty/object"
 )
 
-type Modifier func(object.Object, ...any) object.Object
+type Modifier func(input object.Object, args ...any) object.Object
 
 // Builtin variable modifiers
 // https://www.smarty.net/docs/en/language.modifiers.tpl
@@ -36,7 +37,7 @@ type Modifier func(object.Object, ...any) object.Object
 // - unescape
 // - upper
 // - wordwrap
-var Registry = map[string]Modifier{
+var registry = map[string]Modifier{
 	"nl2br": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{} // またはエラーオブジェクト
@@ -67,7 +68,7 @@ var Registry = map[string]Modifier{
 
 		return &object.String{Value: strings.ToLower(input.Inspect())}
 	},
-	"wordwrap": func(input object.Object, a ...any) object.Object {
+	"wordwrap": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
 			return &object.String{}
 		}
@@ -81,15 +82,22 @@ var Registry = map[string]Modifier{
 
 		return &object.String{Value: phpstring.Wordwrap(input.Inspect(), opt)}
 	},
-	"devtest1": func(input object.Object, args ...any) object.Object {
-		if input.Type() != object.StringType {
-			return &object.String{Value: ""}
-		}
-		str := input.(*object.String).Value
-		return &object.String{Value: str + "_test1"}
-	},
 }
 
-func Register(mod Modifier) error {
-	panic("TODO")
+var registryMu sync.RWMutex
+
+func Get(name string) (Modifier, bool) {
+	registryMu.RLock()
+	defer registryMu.RUnlock()
+	mod, ok := registry[name]
+	return mod, ok
+}
+
+func Register(name string, mod Modifier) bool {
+	registryMu.Lock()
+	defer registryMu.Unlock()
+	_, overrided := registry[name]
+	registry[name] = mod
+
+	return overrided
 }

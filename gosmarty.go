@@ -6,32 +6,50 @@ import (
 
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/lexer"
+	"github.com/szks-repo/gosmarty/modifier"
 	"github.com/szks-repo/gosmarty/object"
 	"github.com/szks-repo/gosmarty/parser"
 )
 
 type GoSmarty struct {
-	name string
-	tree *ast.Tree
+	templates map[string]*Template
 }
 
-func New(name string) *GoSmarty {
+func New() *GoSmarty {
 	return &GoSmarty{
-		name: name,
+		templates: make(map[string]*Template, 0),
 	}
 }
 
-func (gsm *GoSmarty) Parse(input string) (*GoSmarty, error) {
+func (gsm *GoSmarty) Parse(input string) (*Template, error) {
 	p := parser.New(lexer.New(input))
 	tree := p.ParseProgram()
 	if errs := p.Errors(); len(errs) > 0 {
 		return nil, errors.New(strings.Join(errs, "\n"))
 	}
 
-	gsm.tree = tree
-	return gsm, nil
+	return &Template{
+		tree: tree,
+	}, nil
 }
 
-func (gsm *GoSmarty) Exec(env *Environment) object.Object {
-	return Eval(gsm.tree.Root, env)
+func RegisterModifier(name string, mod modifier.Modifier) {
+	modifier.Register(name, mod)
+}
+
+func (gsm *GoSmarty) ExecuteTemplate(name string, env *Environment) object.Object {
+	t, ok := gsm.templates[name]
+	if !ok {
+		panic("ERR: TODO")
+	}
+
+	return Eval(t.tree.Root, env)
+}
+
+type Template struct {
+	tree *ast.Tree
+}
+
+func (t *Template) Execute(env *Environment) object.Object {
+	return Eval(t.tree.Root, env)
 }
