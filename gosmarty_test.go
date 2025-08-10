@@ -58,6 +58,21 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "id:1 name:Tanaka",
 		},
+		{
+			input: `id:{$user.id} name:{$user.name} rank:{$user.rank} balance:{$user.balance | number_format} created_at:{$user.metadata.created_at}`,
+			env: Must(NewEnvironment(
+				WithVariable("user", map[string]any{
+					"id":      "1",
+					"name":    "Tanaka",
+					"rank":    3,
+					"balance": 1500000,
+					"metadata": map[string]any{
+						"created_at": "2024-01-02 15:04:06",
+					},
+				}),
+			)),
+			want: "id:1 name:Tanaka rank:3 balance:1,500,000 created_at:2024-01-02 15:04:06",
+		},
 	}
 
 	for i, tt := range tests {
