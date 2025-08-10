@@ -40,37 +40,36 @@ type Modifier func(input object.Object, args ...any) object.Object
 var registry = map[string]Modifier{
 	"nl2br": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
-			return &object.String{} // またはエラーオブジェクト
+			return object.NULL // またはエラーオブジェクト
 		}
 
-		str := input.(*object.String).Value
-		return &object.String{Value: strings.ReplaceAll(str, "\n", "<br>")}
+		return object.NewString(strings.ReplaceAll(input.Inspect(), "\n", "<br>"))
 	},
 	"number_format": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.NumberType {
-			return &object.String{}
+			return object.NULL
 		}
 
 		val := input.(*object.Number).Value
-		return &object.String{Value: phpstring.NumberFormat[float64](val)}
+		return object.NewString(phpstring.NumberFormat[float64](val))
 	},
 	"upper": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
-			return &object.String{}
+			return object.NULL
 		}
 
-		return &object.String{Value: strings.ToUpper(input.Inspect())}
+		return object.NewString(strings.ToUpper(input.Inspect()))
 	},
 	"lower": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
-			return &object.String{}
+			return object.NULL
 		}
 
-		return &object.String{Value: strings.ToLower(input.Inspect())}
+		return object.NewString(strings.ToLower(input.Inspect()))
 	},
 	"wordwrap": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.StringType {
-			return &object.String{}
+			return object.NULL
 		}
 
 		// TODO:
@@ -80,7 +79,7 @@ var registry = map[string]Modifier{
 		// 2: cutLong
 		var opt phpstring.WordwrapOpt
 
-		return &object.String{Value: phpstring.Wordwrap(input.Inspect(), opt)}
+		return object.NewString(phpstring.Wordwrap(input.Inspect(), opt))
 	},
 }
 

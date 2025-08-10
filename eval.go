@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	NULL = &object.Null{}
+	NULL = object.NewNull()
 )
 
 // Eval はASTノードを評価する中心的な関数
@@ -22,7 +22,7 @@ func Eval(node ast.Node, env *Environment) object.Object {
 		return Eval(node.Pipe, env)
 	// テキスト
 	case *ast.TextNode:
-		return &object.String{Value: node.Value}
+		return object.NewString(node.Value)
 	// 識別子 (変数)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
@@ -47,7 +47,7 @@ func evalNodes(nodes []ast.Node, env *Environment) object.Object {
 			result += evaluated.Inspect()
 		}
 	}
-	return &object.String{Value: result}
+	return object.NewString(result)
 }
 
 // evalIdentifier は環境から変数の値を探して返す
@@ -55,9 +55,8 @@ func evalIdentifier(node *ast.Identifier, env *Environment) object.Object {
 	if val, ok := env.GetVar(node.Value); ok {
 		return val
 	}
-	// 簡単のため、見つからなければ空文字を返す
-	// Smartyのデフォルトの動作に近い
-	return &object.String{Value: ""}
+
+	return NULL
 }
 
 func evalIfNode(in *ast.IfNode, env *Environment) object.Object {
@@ -97,7 +96,7 @@ func evalPipeNode(node *ast.PipeNode, env *Environment) object.Object {
 	if !ok {
 		// エラー処理: 未定義の関数
 		// ここでは空文字を返す
-		return &object.String{Value: ""}
+		return NULL
 	}
 
 	return fn(left)

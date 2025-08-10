@@ -94,9 +94,9 @@ func TestModifier(t *testing.T) {
 			modifiers: map[string]modifier.Modifier{
 				"pipe_test": func(input object.Object, args ...any) object.Object {
 					if input.Type() == object.StringType {
-						return &object.String{Value: input.Inspect() + "_test1"}
+						return object.NewString(input.Inspect() + "_test1")
 					}
-					return object.NULL
+					return object.NewNull()
 				},
 			},
 			want: "Smarty_test1_test1_test1 1|2|3|4",
