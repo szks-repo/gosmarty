@@ -43,7 +43,7 @@ var registry = map[string]Modifier{
 			return object.NULL // またはエラーオブジェクト
 		}
 
-		return object.NewString(strings.ReplaceAll(input.Inspect(), "\n", "<br>"))
+		return object.NewString(strings.ReplaceAll(input.Inspect(), "\n", "<br />"))
 	},
 	"number_format": func(input object.Object, args ...any) object.Object {
 		if input.Type() != object.NumberType {
