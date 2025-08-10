@@ -282,7 +282,7 @@ func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 	}
 }
 
-func (p *Parser) parsePrimaryExpr() ast.Node {
+func (p *Parser) parsePrimaryExpr_backup() ast.Node {
 	var left ast.Node
 
 	switch p.curToken.Type {
@@ -329,25 +329,70 @@ func (p *Parser) parsePrimaryExpr() ast.Node {
 	return left
 }
 
-// パイプラインの元となる最初の式をパースするヘルパー
-func (p *Parser) parsePrimaryExpr_backup() ast.Node {
+func (p *Parser) parsePrimaryExpr() ast.Node {
+	var left ast.Node
+
 	switch p.curToken.Type {
 	case token.DOLLAR:
-		// '
-		p.nextToken()
+		p.nextToken() // '$' を消費
 		if !p.curTokenIs(token.IDENT) {
 			p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
 			return nil
 		}
-		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		// 識別子を消費
-		p.nextToken()
-		return ident
+		left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		p.nextToken() // 識別子を消費
 	case token.NUMBER:
-		return p.parseNumberLiteral()
+		left = p.parseNumberLiteral()
 	default:
-		// 他のプライマリー式（文字列リテラルなど）もここに追加できる
+		p.errors = append(p.errors, fmt.Sprintf("unexpected token for primary expression: %s", p.curToken.Type))
 		return nil
+	}
+
+	// .prop や [index] のような後置演算子をパースするループ
+	for {
+		switch p.curToken.Type {
+		case token.DOT:
+			dotToken := p.curToken
+			p.nextToken() // '.' を消費
+
+			if !p.curTokenIs(token.IDENT) {
+				p.errors = append(p.errors, fmt.Sprintf("expected IDENT after '.', got %s", p.curToken.Type))
+				return nil
+			}
+
+			right := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			left = &ast.FieldAccess{
+				Token: dotToken,
+				Left:  left,
+				Right: right,
+			}
+			p.nextToken() // プロパティ識別子を消費
+
+		case token.LBRACKET: // ここを修正します
+			bracketToken := p.curToken
+			p.nextToken() // '[' を消費
+
+			index := p.parsePrimaryExpr() // インデックス内の式 ('0'など) をパース
+
+			// 現在のトークンが ']' であることを確認
+			if !p.curTokenIs(token.RBRACKET) {
+				msg := fmt.Sprintf("expected token to be ], got %s instead", p.curToken.Type)
+				p.errors = append(p.errors, msg)
+				return nil
+			}
+
+			left = &ast.IndexExpression{
+				Token: bracketToken,
+				Left:  left,
+				Index: index,
+			}
+
+			p.nextToken() // ']' を消費して次に進む
+
+		default:
+			// 後置演算子がなければループを抜ける
+			return left
+		}
 	}
 }
 

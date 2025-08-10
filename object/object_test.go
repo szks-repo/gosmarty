@@ -55,6 +55,16 @@ func TestNewObjectFromAny(t *testing.T) {
 			anyVal: Int64Underlying(100),
 			want:   &Number{Value: float64(100)},
 		},
+		{
+			anyVal: []string{"1", "2", "3"},
+			want: &Array{
+				Value: []Object{
+					NewString("1"),
+					NewString("2"),
+					NewString("3"),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
