@@ -95,21 +95,26 @@ func (p *Parser) parseTag() ast.Node {
 func (p *Parser) parseVariableTag() *ast.ActionNode {
 	// curTokenは '{'
 	node := &ast.ActionNode{Token: p.curToken}
-	p.nextToken() // '{' を消費 -> curTokenは '$'
+	// '{' を消費 -> curTokenは '$'
+	p.nextToken()
 
-	p.nextToken() // '$' を消費 -> curTokenは 識別子
+	// '$' を消費 -> curTokenは 識別子
+	p.nextToken()
 	if !p.curTokenIs(token.IDENT) {
 		p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
 		return nil
 	}
 	node.Pipe = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	p.nextToken() // 識別子を消費
+	// 識別子を消費
+	p.nextToken()
 
 	if !p.curTokenIs(token.RDELIM) {
 		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM, got %s", p.curToken.Type))
 		return nil
 	}
-	p.nextToken() // '}' を消費
+
+	// '}' を消費
+	p.nextToken()
 	return node
 }
 
@@ -125,34 +130,44 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 		p.errors = append(p.errors, "expected variable expression for if condition")
 		return nil
 	}
-	p.nextToken() // '$' を消費 -> curTokenは 識別子
+
+	// '$' を消費 -> curTokenは 識別子
+	p.nextToken()
 	if !p.curTokenIs(token.IDENT) {
 		p.errors = append(p.errors, fmt.Sprintf("expected IDENT for condition, got %s", p.curToken.Type))
 		return nil
 	}
-	node.Condition = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	p.nextToken() // 識別子を消費
+	node.Condition = &ast.Identifier{
+		Token: p.curToken,
+		Value: p.curToken.Literal,
+	}
+	// 識別子を消費
+	p.nextToken()
 
 	// 2. {if ...} の閉じ '}' を消費
 	if !p.curTokenIs(token.RDELIM) {
 		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM after if condition, got %s", p.curToken.Type))
 		return nil
 	}
-	p.nextToken() // '}' を消費
+	// '}' を消費
+	p.nextToken()
 
 	// 3. Consequence (then節) のパース
 	node.Consequence = p.parseBlockUntil(token.ELSE, token.ENDIF)
 
 	// 4. Alternative (else節) のパース (存在すれば)
 	if p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ELSE) {
-		p.nextToken() // '{' を消費
-		p.nextToken() // 'else' を消費
+		// '{' を消費
+		p.nextToken()
+		// 'else' を消費
+		p.nextToken()
 
 		if !p.curTokenIs(token.RDELIM) {
 			p.errors = append(p.errors, "expected RDELIM for else tag")
 			return nil
 		}
-		p.nextToken() // '}' を消費
+		// '}' を消費
+		p.nextToken()
 
 		node.Alternative = p.parseBlockUntil(token.ENDIF)
 	}
@@ -162,14 +177,17 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 		p.errors = append(p.errors, "expected {/if} tag")
 		return nil
 	}
-	p.nextToken() // '{' を消費
-	p.nextToken() // '/if' を消費
+	// '{' を消費
+	p.nextToken()
+	// '/if' を消費
+	p.nextToken()
 
 	if !p.curTokenIs(token.RDELIM) {
 		p.errors = append(p.errors, "expected RDELIM for /if tag")
 		return nil
 	}
-	p.nextToken() // '}' を消費
+	// '}' を消費
+	p.nextToken()
 
 	return node
 }
@@ -186,7 +204,7 @@ func (p *Parser) parseBlockUntil(endTokens ...token.TokenType) *ast.ListNode {
 		if p.curTokenIs(token.LDELIM) {
 			for _, endToken := range endTokens {
 				if p.peekTokenIs(endToken) {
-					return block // 終了トークンを見つけたのでブロックを返す
+					return block
 				}
 			}
 		}
@@ -225,7 +243,9 @@ func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 	// '|' が続く限りパイプラインを構築
 	for p.curTokenIs(token.PIPE) {
 		pipeToken := p.curToken
-		p.nextToken() // '|' を消費
+
+		// '|' を消費
+		p.nextToken()
 
 		if !p.curTokenIs(token.IDENT) {
 			p.errors = append(p.errors, "expected modifier function name after '|'")
@@ -234,36 +254,47 @@ func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 
 		// 新しいPipeNodeを作成し、それまでの式を左辺に設定
 		left = &ast.PipeNode{
-			Token:    pipeToken,
-			Left:     left,
-			Function: &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal},
+			Token: pipeToken,
+			Left:  left,
+			Function: &ast.Identifier{
+				Token: p.curToken,
+				Value: p.curToken.Literal,
+			},
 		}
-		p.nextToken() // 関数名を消費
+		// 関数名を消費
+		p.nextToken()
 	}
-
-	// 最終的な式をActionNodeに格納
-	actionNode := &ast.ActionNode{Token: token.Token{Type: token.LDELIM, Literal: "{"}}
-	actionNode.Pipe = left
 
 	if !p.curTokenIs(token.RDELIM) {
 		p.errors = append(p.errors, fmt.Sprintf("expected RDELIM, got %s", p.curToken.Type))
 		return nil
 	}
-	p.nextToken() // '}' を消費
-	return actionNode
+
+	// '}' を消費
+	p.nextToken()
+
+	return &ast.ActionNode{
+		Token: token.Token{
+			Type:    token.LDELIM,
+			Literal: "{",
+		},
+		Pipe: left,
+	}
 }
 
 // パイプラインの元となる最初の式をパースするヘルパー
 func (p *Parser) parsePrimaryExpr() ast.Node {
 	switch p.curToken.Type {
 	case token.DOLLAR:
-		p.nextToken() // '
+		// '
+		p.nextToken()
 		if !p.curTokenIs(token.IDENT) {
 			p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
 			return nil
 		}
 		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		p.nextToken() // 識別子を消費
+		// 識別子を消費
+		p.nextToken()
 		return ident
 	case token.NUMBER:
 		return p.parseNumberLiteral()
@@ -284,6 +315,7 @@ func (p *Parser) parseNumberLiteral() ast.Node {
 	}
 
 	lit.Value = value
-	p.nextToken() // 数値トークンを消費
+	// 数値トークンを消費
+	p.nextToken()
 	return lit
 }
