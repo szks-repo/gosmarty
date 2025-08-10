@@ -111,6 +111,8 @@ func isTruthy(obj object.Object) bool {
 		return len(obj.Value) > 0
 	case *object.Array:
 		return len(obj.Value) > 0
+	case *object.Time:
+		return !obj.Value.IsZero()
 	default:
 		return true
 	}

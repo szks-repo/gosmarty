@@ -3,6 +3,7 @@ package object
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 var (
@@ -21,6 +22,7 @@ const (
 	NumberType
 	ArrayType
 	MapType
+	TimeType
 )
 
 type Object interface {
@@ -77,6 +79,8 @@ func NewObjectFromAny(i any) (Object, error) {
 			pairs[key] = obj
 		}
 		return &Map{Value: pairs}, nil
+	case time.Time:
+		return NewTime(i), nil
 	// todo: support go stdlib package types
 	// case *big.Rat:
 	// case *big.Int:
