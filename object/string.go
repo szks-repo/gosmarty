@@ -10,8 +10,12 @@ type String struct {
 	Value string
 }
 
-func StringFromInteger[I constraints.Integer](i I) String {
-	return String{Value: fmt.Sprintf("%d", i)}
+func NewString[S ~string](s S) *String {
+	return &String{Value: string(s)}
+}
+
+func StringFromInteger[I constraints.Integer](i I) *String {
+	return &String{Value: fmt.Sprintf("%d", i)}
 }
 
 func (s *String) Type() ObjectType {
