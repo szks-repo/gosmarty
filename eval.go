@@ -75,7 +75,7 @@ func evalFieldAccess(node *ast.FieldAccess, env *Environment) object.Object {
 	propName := node.Right.Value // (e.g., "id")
 
 	// 4. プロパティが存在すればその値を、なければNULLを返す
-	if val, ok := objMap.Pairs[propName]; ok {
+	if val, ok := objMap.Value[propName]; ok {
 		return val
 	}
 
