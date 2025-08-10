@@ -3,6 +3,7 @@ package object
 import (
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestNewObjectFromAny(t *testing.T) {
@@ -62,6 +63,49 @@ func TestNewObjectFromAny(t *testing.T) {
 					NewString("1"),
 					NewString("2"),
 					NewString("3"),
+				},
+			},
+		},
+		{
+			anyVal: struct {
+				Id   int
+				Name string
+			}{
+				Id:   123,
+				Name: "Alice",
+			},
+			want: &Map{
+				Value: map[string]Object{
+					"Id":   &Number{Value: 123},
+					"Name": &String{Value: "Alice"},
+				},
+			},
+		},
+		{
+			anyVal: struct {
+				Id       int
+				Name     string
+				Metadata *struct {
+					CreatedAt time.Time
+				}
+			}{
+				Id:   123,
+				Name: "Alice",
+				Metadata: &struct {
+					CreatedAt time.Time
+				}{
+					CreatedAt: time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC),
+				},
+			},
+			want: &Map{
+				Value: map[string]Object{
+					"Id":   &Number{Value: 123},
+					"Name": &String{Value: "Alice"},
+					"Metadata": &Map{
+						Value: map[string]Object{
+							"CreatedAt": &Time{Value: time.Date(2023, 10, 1, 12, 0, 0, 0, time.UTC)},
+						},
+					},
 				},
 			},
 		},
