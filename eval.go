@@ -52,7 +52,7 @@ func evalNodes(nodes []ast.Node, env *Environment) object.Object {
 
 // evalIdentifier は環境から変数の値を探して返す
 func evalIdentifier(node *ast.Identifier, env *Environment) object.Object {
-	if val, ok := env.Get(node.Value); ok {
+	if val, ok := env.GetVar(node.Value); ok {
 		return val
 	}
 	// 簡単のため、見つからなければ空文字を返す
@@ -93,7 +93,7 @@ func evalPipeNode(node *ast.PipeNode, env *Environment) object.Object {
 	left := Eval(node.Left, env)
 
 	funcName := node.Function.Value
-	fn, ok := modifier.Registry[funcName]
+	fn, ok := modifier.Get(funcName)
 	if !ok {
 		// エラー処理: 未定義の関数
 		// ここでは空文字を返す

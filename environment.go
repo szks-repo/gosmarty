@@ -7,13 +7,13 @@ import (
 
 // Environment は変数名と、それが束縛する値(Object)を保持します。
 type Environment struct {
-	store     map[string]object.Object
+	vars      map[string]object.Object
 	modifiers map[string]modifier.Modifier
 }
 
 func NewEnvironment(opt ...EnvOption) (*Environment, error) {
 	env := &Environment{
-		store: make(map[string]object.Object),
+		vars: make(map[string]object.Object),
 	}
 	for _, fn := range opt {
 		_ = fn(env) //todo: reporting all errors
@@ -22,13 +22,13 @@ func NewEnvironment(opt ...EnvOption) (*Environment, error) {
 	return env, nil
 }
 
-func (e *Environment) Get(name string) (object.Object, bool) {
-	obj, ok := e.store[name]
+func (e *Environment) GetVar(name string) (object.Object, bool) {
+	obj, ok := e.vars[name]
 	return obj, ok
 }
 
 func (e *Environment) setVar(name string, val object.Object) {
-	e.store[name] = val
+	e.vars[name] = val
 }
 
 type EnvOption = func(env *Environment) error
