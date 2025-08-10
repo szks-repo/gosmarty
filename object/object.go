@@ -51,16 +51,22 @@ func NewObjectFromAny(i any) (Object, error) {
 		return FALSE, nil
 	case nil:
 		return NULL, nil
+	case []string:
+		values := make([]Object, len(i))
+		for idx, elem := range i {
+			values[idx] = NewString(elem)
+		}
+		return &Array{Value: values}, nil
 	case []any:
-		elements := make([]Object, len(i))
+		values := make([]Object, len(i))
 		for idx, elem := range i {
 			obj, err := NewObjectFromAny(elem)
 			if err != nil {
 				return nil, err
 			}
-			elements[idx] = obj
+			values[idx] = obj
 		}
-		return &Array{Value: elements}, nil
+		return &Array{Value: values}, nil
 	case map[string]any:
 		pairs := make(map[string]Object)
 		for key, val := range i {

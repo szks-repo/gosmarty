@@ -28,6 +28,8 @@ func Eval(node ast.Node, env *Environment) object.Object {
 		return evalIdentifier(node, env)
 	case *ast.FieldAccess:
 		return evalFieldAccess(node, env)
+	case *ast.IndexExpression:
+		return evalIndexExpression(node, env)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
 	case *ast.IfNode:
@@ -127,4 +129,23 @@ func evalPipeNode(node *ast.PipeNode, env *Environment) object.Object {
 	}
 
 	return fn(left)
+}
+
+func evalIndexExpression(node *ast.IndexExpression, env *Environment) object.Object {
+	left := Eval(node.Left, env)
+	index := Eval(node.Index, env)
+
+	// ArrayをNumberでインデックスアクセスする場合のみを考慮
+	if left.Type() == object.ArrayType && index.Type() == object.NumberType {
+		arrObject := left.(*object.Array)
+		idx := int(index.(*object.Number).Value)
+
+		// 範囲外アクセスチェック
+		if idx < 0 || idx >= len(arrObject.Value) {
+			return NULL // 範囲外ならNULLを返す
+		}
+		return arrObject.Value[idx]
+	}
+
+	return NULL
 }

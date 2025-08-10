@@ -73,6 +73,14 @@ func TestVariableEvaluation(t *testing.T) {
 			)),
 			want: "id:1 name:Tanaka rank:3 balance:1,500,000 created_at:2024-01-02 15:04:06",
 		},
+		// Index access
+		{
+			input: `id[0]:{$ids[0]} id[1]:{$ids[1]} id[2]:{$ids[2]} id[3]:{$ids[3]}`,
+			env: Must(NewEnvironment(
+				WithVariable("ids", []string{"1", "2", "3", "4"}),
+			)),
+			want: "id[0]:1 id[1]:2 id[2]:3 id[3]:4",
+		},
 	}
 
 	for i, tt := range tests {
