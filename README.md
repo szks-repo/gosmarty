@@ -28,3 +28,6 @@ Our goal is to achieve full compatibility with the PHP Smarty engine. The follow
 | 2     | **Template Structuring**              | `{include}`, `{extends}`, `{block}`                         |
 | 3     | **Compatibility**                     | Essential built-in functions (`{strip}`, `{literal}`, etc.) |
 | 4     | **Advanced Features**                 | Caching, Plugin System                                      |
+
+## 📄 License
+This project is licensed under the MIT License. See the LICENSE file for details.
