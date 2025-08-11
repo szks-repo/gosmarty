@@ -120,7 +120,12 @@ func NewObjectFromAny(i any) (Object, error) {
 				if err != nil {
 					return nil, fmt.Errorf("failed to convert field %s: %w", typ.Name, err)
 				}
-				pairs[typ.Name] = valObj
+
+				key := typ.Name
+				if fieldTag := typ.Tag.Get("gosmarty"); fieldTag != "" {
+					key = fieldTag
+				}
+				pairs[key] = valObj
 			}
 			//todo
 			return &Map{Value: pairs}, nil
