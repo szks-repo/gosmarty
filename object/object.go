@@ -117,11 +117,16 @@ func NewObjectFromAny(i any) (Object, error) {
 				val := rv.Field(i)
 				typ := rt.Field(i)
 				key := typ.Name
+				if val.Kind() == reflect.Func {
+					// skip function field
+					continue
+				}
 				if fieldTag := typ.Tag.Get("gosmarty"); fieldTag != "" {
 					key = fieldTag
 				}
 				if key == "-" {
-					continue // skip fields with "-" tag
+					// skip fields with "-" tag
+					continue
 				}
 
 				valObj, err := NewObjectFromAny(val.Interface())
