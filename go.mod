@@ -3,7 +3,7 @@ module github.com/szks-repo/gosmarty
 go 1.25
 
 require (
-	github.com/szks-repo/go-php-functions v0.0.1
+	github.com/szks-repo/go-php-functions v0.0.2
 	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a
 )
 
