@@ -96,11 +96,20 @@ func evalIfNode(in *ast.IfNode, env *Environment) object.Object {
 
 	if isTruthy(condition) {
 		return Eval(in.Consequence, env)
-	} else if in.Alternative != nil {
-		return Eval(in.Alternative, env)
-	} else {
-		return NULL
 	}
+
+	for _, elseifNode := range in.ElseIfs {
+		elseifCondition := Eval(elseifNode.Condition, env)
+		if isTruthy(elseifCondition) {
+			return Eval(elseifNode.Consequence, env)
+		}
+	}
+
+	if in.Alternative != nil {
+		return Eval(in.Alternative, env)
+	}
+
+	return NULL
 }
 
 // isTruthy はオブジェクトが「真」であるかを判定するヘルパー

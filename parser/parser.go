@@ -153,9 +153,47 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 	p.nextToken()
 
 	// 3. Consequence (then節) のパース
-	node.Consequence = p.parseBlockUntil(token.ELSE, token.ENDIF)
+	node.Consequence = p.parseBlockUntil(token.ELSE, token.ELSEIF, token.ENDIF)
 
-	// 4. Alternative (else節) のパース (存在すれば)
+	// 4. ElseIf ブランチのパース
+	for p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ELSEIF) {
+		// '{' を消費
+		p.nextToken()
+		elseifNode := &ast.ElseIfNode{Token: p.curToken}
+		// 'elseif' を消費
+		p.nextToken()
+
+		if !p.curTokenIs(token.DOLLAR) {
+			p.errors = append(p.errors, "expected variable expression for elseif condition")
+			return nil
+		}
+		// '$' を消費
+		p.nextToken()
+
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT for elseif condition, got %s", p.curToken.Type))
+			return nil
+		}
+
+		elseifNode.Condition = &ast.Identifier{
+			Token: p.curToken,
+			Value: p.curToken.Literal,
+		}
+		// 識別子を消費
+		p.nextToken()
+
+		if !p.curTokenIs(token.RDELIM) {
+			p.errors = append(p.errors, "expected RDELIM for elseif tag")
+			return nil
+		}
+		// '}' を消費
+		p.nextToken()
+
+		elseifNode.Consequence = p.parseBlockUntil(token.ELSEIF, token.ELSE, token.ENDIF)
+		node.ElseIfs = append(node.ElseIfs, elseifNode)
+	}
+
+	// 5. Alternative (else節) のパース (存在すれば)
 	if p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ELSE) {
 		// '{' を消費
 		p.nextToken()
@@ -172,7 +210,7 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 		node.Alternative = p.parseBlockUntil(token.ENDIF)
 	}
 
-	// 5. 終了タグ {/if} を消費
+	// 6. 終了タグ {/if} を消費
 	if !(p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ENDIF)) {
 		p.errors = append(p.errors, "expected {/if} tag")
 		return nil

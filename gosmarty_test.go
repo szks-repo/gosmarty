@@ -256,7 +256,7 @@ func TestIfStatements(t *testing.T) {
 	tests := []struct {
 		input    string
 		env      *Environment
-		expected string
+		want string
 	}{
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
@@ -264,7 +264,7 @@ func TestIfStatements(t *testing.T) {
 				WithVariable("is_logged_in", true),
 				WithVariable("name", "Suzuki"),
 			)),
-			expected: "Welcome, Suzuki!",
+			want: "Welcome, Suzuki!",
 		},
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
@@ -272,56 +272,81 @@ func TestIfStatements(t *testing.T) {
 				WithVariable("is_logged_in", false),
 				WithVariable("name", "Suzuki"),
 			)),
-			expected: "Hello, Guest.",
+			want: "Hello, Guest.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
 			env: Must(NewEnvironment(
 				WithVariable("item_count", "exists"), // 空文字以外はtrue
 			)),
-			expected: "Your item is available.",
+			want: "Your item is available.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
 			env: Must(NewEnvironment(
 				WithVariable("item_count", ""), // 空文字はfalse
 			)),
-			expected: "Your item is sold out.",
+			want: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
 			env: Must(NewEnvironment(
 				WithVariable("item_count", nil), // nilはfalse
 			)),
-			expected: "Your item is sold out.",
+			want: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
 			env: Must(NewEnvironment(
 				WithVariable("item_count", 0), // 0はfalse
 			)),
-			expected: "Your item is sold out.",
+			want: "Your item is sold out.",
 		},
 		{
 			input: `Your item is {if $item_count}available{else}sold out{/if}.`,
 			env: Must(NewEnvironment(
 				WithVariable("item_count", 1), // 0以外true
 			)),
-			expected: "Your item is available.",
+			want: "Your item is available.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
 			env: Must(NewEnvironment(
 				WithVariable("show_block", true),
 			)),
-			expected: "This block is shown.",
+			want: "This block is shown.",
 		},
 		{
 			input: `{if $show_block}This block is shown.{/if}`,
 			env: Must(NewEnvironment(
 				WithVariable("show_block", false),
 			)),
-			expected: "",
+			want: "",
+		},
+				{
+			input: `{if $primary}Primary{elseif $secondary}Secondary{else}Fallback{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("primary", false),
+				WithVariable("secondary", true),
+			)),
+			want: "Secondary",
+		},
+		{
+			input: `{if $primary}Primary{elseif $secondary}Secondary{elseif $tertiary}Tertiary{else}Fallback{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("primary", false),
+				WithVariable("secondary", false),
+				WithVariable("tertiary", true),
+			)),
+			want: "Tertiary",
+		},
+		{
+			input: `{if $primary}Primary{elseif $secondary}Secondary{else}Fallback{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("primary", false),
+				WithVariable("secondary", false),
+			)),
+			want: "Fallback",
 		},
 	}
 
@@ -338,8 +363,8 @@ func TestIfStatements(t *testing.T) {
 			t.Error("isn't object.String")
 		}
 
-		if result.Value != tt.expected {
-			t.Errorf("wrong result for input %q.\nexpected=%q\ngot     =%q", tt.input, tt.expected, result.Value)
+		if result.Value != tt.want {
+			t.Errorf("wrong result for input %q.\nwant=%q\ngot     =%q", tt.input, tt.want, result.Value)
 		}
 	}
 }
