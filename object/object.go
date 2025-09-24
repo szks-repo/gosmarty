@@ -121,9 +121,9 @@ func NewObjectFromAny(i any) (Object, error) {
 		case reflect.Bool:
 			return &Boolean{Value: rv.Bool()}, nil
 		case reflect.Slice, reflect.Array:
-			len := rv.Len()
-			values := make([]Object, len)
-			for idx := 0; idx < len; idx++ {
+			length := rv.Len()
+			values := make([]Object, length)
+			for idx := 0; idx < length; idx++ {
 				obj, err := NewObjectFromAny(rv.Index(idx).Interface())
 				if err != nil {
 					return nil, err

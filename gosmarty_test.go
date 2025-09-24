@@ -244,6 +244,30 @@ func TestForeach(t *testing.T) {
 			want: "1:Tom,2:Bob,",
 		},
 		{
+			name:  "first last flags",
+			input: `{foreach from=$items item=item name=list}{$smarty.foreach.list.first}:{$smarty.foreach.list.last}:{$item};{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{"A", "B", "C"}),
+			)),
+			want: "true:false:A;false:false:B;false:true:C;",
+		},
+		{
+			name:  "first flag in if",
+			input: `{foreach from=$items item=item name=list}{if $smarty.foreach.list.first}First!{/if}{$item};{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{"A", "B"}),
+			)),
+			want: "First!A;B;",
+		},
+				{
+			name:  "last flag in if",
+			input: `{foreach from=$items item=item name=list}{if $smarty.foreach.list.last}Last!{/if}{$item};{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{"A", "B"}),
+			)),
+			want: "A;Last!B;",
+		},
+		{
 			name:  "foreachelse fallback",
 			input: `{foreach from=$items item=item}{$item}{foreachelse}empty{/foreach}`,
 			env: Must(NewEnvironment(

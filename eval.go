@@ -191,6 +191,17 @@ func evalForeachNode(node *ast.ForeachNode, env *Environment) object.Object {
 		prevKey, hadPrevKey = env.GetVar(node.Key)
 	}
 
+	var foreachMap *object.Map
+	var loopState *object.Map
+	var prevLoopState object.Object
+	var hadPrevLoop bool
+	if node.Name != "" {
+		foreachMap = ensureSmartyForeachMap(env)
+		prevLoopState, hadPrevLoop = foreachMap.Value[node.Name]
+		loopState = &object.Map{Value: map[string]object.Object{}}
+		foreachMap.Value[node.Name] = loopState
+	}
+
 	defer func() {
 		if node.Item != "" {
 			if hadPrevItem {
@@ -206,6 +217,13 @@ func evalForeachNode(node *ast.ForeachNode, env *Environment) object.Object {
 				env.unsetVar(node.Key)
 			}
 		}
+		if node.Name != "" && foreachMap != nil {
+			if hadPrevLoop {
+				foreachMap.Value[node.Name] = prevLoopState
+			} else {
+				delete(foreachMap.Value, node.Name)
+			}
+		}
 	}()
 
 	var rendered strings.Builder
@@ -213,12 +231,14 @@ func evalForeachNode(node *ast.ForeachNode, env *Environment) object.Object {
 
 	switch obj := iterable.(type) {
 	case *object.Array:
+		total := len(obj.Value)
 		for idx, elem := range obj.Value {
 			iterated = true
 			env.setVar(node.Item, elem)
 			if node.Key != "" {
 				env.setVar(node.Key, &object.Number{Value: float64(idx)})
 			}
+			updateForeachLoopState(loopState, idx, total)
 			appendRendered(&rendered, Eval(node.Body, env))
 		}
 	case *object.Map:
@@ -228,12 +248,14 @@ func evalForeachNode(node *ast.ForeachNode, env *Environment) object.Object {
 				keys = append(keys, key)
 			}
 			sort.Strings(keys)
-			for _, key := range keys {
+			total := len(keys)
+			for idx, key := range keys {
 				iterated = true
 				env.setVar(node.Item, obj.Value[key])
 				if node.Key != "" {
 					env.setVar(node.Key, object.NewString(key))
 				}
+				updateForeachLoopState(loopState, idx, total)
 				appendRendered(&rendered, Eval(node.Body, env))
 			}
 		}
@@ -273,4 +295,38 @@ func unwrapOptional(obj object.Object) object.Object {
 		obj = opt.Unwrap()
 	}
 	return obj
+}
+
+func ensureSmartyForeachMap(env *Environment) *object.Map {
+	var smartyMap *object.Map
+	if current, ok := env.GetVar("smarty"); ok {
+		if existing, ok := current.(*object.Map); ok {
+			smartyMap = existing
+		}
+	}
+	if smartyMap == nil {
+		smartyMap = &object.Map{Value: map[string]object.Object{}}
+		env.setVar("smarty", smartyMap)
+	}
+
+	var foreachMap *object.Map
+	if existing, ok := smartyMap.Value["foreach"]; ok {
+		if casted, ok := existing.(*object.Map); ok {
+			foreachMap = casted
+		}
+	}
+	if foreachMap == nil {
+		foreachMap = &object.Map{Value: map[string]object.Object{}}
+		smartyMap.Value["foreach"] = foreachMap
+	}
+
+	return foreachMap
+}
+
+func updateForeachLoopState(loopState *object.Map, idx, total int) {
+	if loopState == nil || total <= 0 {
+		return
+	}
+	loopState.Value["first"] = object.NewBool(idx == 0)
+	loopState.Value["last"] = object.NewBool(idx == total-1)
 }

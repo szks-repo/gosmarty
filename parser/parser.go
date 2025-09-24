@@ -129,26 +129,13 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 	// curTokenは '{'
 	p.nextToken() // '{' を消費 -> curTokenは 'if'
 	node := &ast.IfNode{Token: p.curToken}
-	p.nextToken() // 'if' を消費 -> curTokenは '$'
+	p.nextToken() // 'if' を消費 -> curTokenは 条件式の先頭
 
-	// 1. 条件式のパース
-	if p.curToken.Type != token.DOLLAR {
-		p.errors = append(p.errors, "expected variable expression for if condition")
+	cond := p.parsePrimaryExpr()
+	if cond == nil {
 		return nil
 	}
-
-	// '$' を消費 -> curTokenは 識別子
-	p.nextToken()
-	if !p.curTokenIs(token.IDENT) {
-		p.errors = append(p.errors, fmt.Sprintf("expected IDENT for condition, got %s", p.curToken.Type))
-		return nil
-	}
-	node.Condition = &ast.Identifier{
-		Token: p.curToken,
-		Value: p.curToken.Literal,
-	}
-	// 識別子を消費
-	p.nextToken()
+	node.Condition = cond
 
 	// 2. {if ...} の閉じ '}' を消費
 	if !p.curTokenIs(token.RDELIM) {
@@ -169,24 +156,12 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 		// 'elseif' を消費
 		p.nextToken()
 
-		if !p.curTokenIs(token.DOLLAR) {
-			p.errors = append(p.errors, "expected variable expression for elseif condition")
-			return nil
-		}
-		// '$' を消費
-		p.nextToken()
-
-		if !p.curTokenIs(token.IDENT) {
-			p.errors = append(p.errors, fmt.Sprintf("expected IDENT for elseif condition, got %s", p.curToken.Type))
+		cond := p.parsePrimaryExpr()
+		if cond == nil {
 			return nil
 		}
 
-		elseifNode.Condition = &ast.Identifier{
-			Token: p.curToken,
-			Value: p.curToken.Literal,
-		}
-		// 識別子を消費
-		p.nextToken()
+		elseifNode.Condition = cond
 
 		if !p.curTokenIs(token.RDELIM) {
 			p.errors = append(p.errors, "expected RDELIM for elseif tag")
@@ -489,8 +464,8 @@ func (p *Parser) parsePrimaryExpr_backup() ast.Node {
 	switch p.curToken.Type {
 	case token.DOLLAR:
 		p.nextToken() // '$' を消費
-		if !p.curTokenIs(token.IDENT) {
-			p.errors = append(p.errors, fmt.Sprintf("expected IDENT, got %s", p.curToken.Type))
+		if !isIdentLike(p.curToken.Type) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT-like token, got %s", p.curToken.Type))
 			return nil
 		}
 		left = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
@@ -508,8 +483,8 @@ func (p *Parser) parsePrimaryExpr_backup() ast.Node {
 		// '.' を消費
 		p.nextToken()
 
-		if !p.curTokenIs(token.IDENT) {
-			p.errors = append(p.errors, fmt.Sprintf("expected IDENT after '.', got %s", p.curToken.Type))
+		if !isIdentLike(p.curToken.Type) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT-like token after '.', got %s", p.curToken.Type))
 			return nil
 		}
 
@@ -556,8 +531,8 @@ func (p *Parser) parsePrimaryExpr() ast.Node {
 			dotToken := p.curToken
 			p.nextToken() // '.' を消費
 
-			if !p.curTokenIs(token.IDENT) {
-				p.errors = append(p.errors, fmt.Sprintf("expected IDENT after '.', got %s", p.curToken.Type))
+			if !isIdentLike(p.curToken.Type) {
+				p.errors = append(p.errors, fmt.Sprintf("expected IDENT-like token after '.', got %s", p.curToken.Type))
 				return nil
 			}
 
@@ -611,4 +586,22 @@ func (p *Parser) parseNumberLiteral() ast.Node {
 	// 数値トークンを消費
 	p.nextToken()
 	return lit
+}
+
+func isIdentLike(t token.TokenType) bool {
+	switch t {
+	case token.IDENT,
+		token.FOREACH,
+		token.FOREACHELSE,
+		token.IF,
+		token.ELSE,
+		token.ELSEIF,
+		token.ENDIF,
+		token.ENDFOREACH,
+		token.LITERAL,
+		token.ENDLITERAL:
+		return true
+	default:
+		return false
+	}
 }
