@@ -84,6 +84,8 @@ func (l *Lexer) nextTokenInTag() token.Token {
 	case '}':
 		tok = newToken(token.RDELIM, l.ch)
 		l.state = stateText // テキストモードに復帰
+	case '=':
+		tok = newToken(token.ASSIGN, l.ch)
 	case '$':
 		tok = newToken(token.DOLLAR, l.ch)
 	case '|':

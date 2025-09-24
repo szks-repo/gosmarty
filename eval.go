@@ -1,6 +1,9 @@
 package gosmarty
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/szks-repo/gosmarty/ast"
 	"github.com/szks-repo/gosmarty/modifier"
 	"github.com/szks-repo/gosmarty/object"
@@ -36,6 +39,8 @@ func Eval(node ast.Node, env *Environment) object.Object {
 		return evalIfNode(node, env)
 	case *ast.PipeNode:
 		return evalPipeNode(node, env)
+	case *ast.ForeachNode:
+		return evalForeachNode(node, env)
 	}
 
 	return nil
@@ -171,4 +176,101 @@ func evalIndexExpression(node *ast.IndexExpression, env *Environment) object.Obj
 	}
 
 	return NULL
+}
+
+func evalForeachNode(node *ast.ForeachNode, env *Environment) object.Object {
+	iterable := unwrapOptional(Eval(node.Source, env))
+	if iterable == nil {
+		iterable = NULL
+	}
+
+	prevItem, hadPrevItem := env.GetVar(node.Item)
+	var prevKey object.Object
+	var hadPrevKey bool
+	if node.Key != "" {
+		prevKey, hadPrevKey = env.GetVar(node.Key)
+	}
+
+	defer func() {
+		if node.Item != "" {
+			if hadPrevItem {
+				env.setVar(node.Item, prevItem)
+			} else {
+				env.unsetVar(node.Item)
+			}
+		}
+		if node.Key != "" {
+			if hadPrevKey {
+				env.setVar(node.Key, prevKey)
+			} else {
+				env.unsetVar(node.Key)
+			}
+		}
+	}()
+
+	var rendered strings.Builder
+	iterated := false
+
+	switch obj := iterable.(type) {
+	case *object.Array:
+		for idx, elem := range obj.Value {
+			iterated = true
+			env.setVar(node.Item, elem)
+			if node.Key != "" {
+				env.setVar(node.Key, &object.Number{Value: float64(idx)})
+			}
+			appendRendered(&rendered, Eval(node.Body, env))
+		}
+	case *object.Map:
+		if len(obj.Value) > 0 {
+			keys := make([]string, 0, len(obj.Value))
+			for key := range obj.Value {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				iterated = true
+				env.setVar(node.Item, obj.Value[key])
+				if node.Key != "" {
+					env.setVar(node.Key, object.NewString(key))
+				}
+				appendRendered(&rendered, Eval(node.Body, env))
+			}
+		}
+	}
+
+	if iterated {
+		if rendered.Len() == 0 {
+			return NULL
+		}
+		return object.NewString(rendered.String())
+	}
+
+	if node.Alternative != nil {
+		return Eval(node.Alternative, env)
+	}
+
+	return NULL
+}
+
+func appendRendered(b *strings.Builder, obj object.Object) {
+	obj = unwrapOptional(obj)
+	if obj == nil {
+		return
+	}
+	if obj.Type() == object.NullType {
+		return
+	}
+	b.WriteString(obj.Inspect())
+}
+
+func unwrapOptional(obj object.Object) object.Object {
+	for obj != nil && obj.Type() == object.OptionalType {
+		opt := obj.(*object.Optional)
+		if !opt.Some() {
+			return NULL
+		}
+		obj = opt.Unwrap()
+	}
+	return obj
 }

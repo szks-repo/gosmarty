@@ -83,6 +83,12 @@ func (p *Parser) parseTag() ast.Node {
 	// return p.parseVariableTagWithPipeline()
 	case token.IF:
 		return p.parseIfTag()
+	case token.FOREACH:
+		return p.parseForeachTag()
+	case token.FOREACHELSE:
+		p.errors = append(p.errors, "unexpected {foreachelse} without matching {foreach}")
+		p.consumeUntil(token.RDELIM)
+		return nil
 	default:
 		// エラー処理：不明なタグ
 		p.errors = append(p.errors, fmt.Sprintf("unknown tag type: %s", p.peekToken.Type))
@@ -230,6 +236,119 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 	return node
 }
 
+func (p *Parser) parseForeachTag() *ast.ForeachNode {
+	// curTokenは '{'
+	p.nextToken() // '{' を消費 -> curTokenは 'foreach'
+	node := &ast.ForeachNode{Token: p.curToken}
+	p.nextToken() // 'foreach' を消費 -> curTokenは最初の属性名
+
+	for !p.curTokenIs(token.RDELIM) && !p.curTokenIs(token.EOF) {
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected attribute name for foreach, got %s", p.curToken.Type))
+			return nil
+		}
+
+		attrName := p.curToken.Literal
+		p.nextToken()
+
+		if !p.curTokenIs(token.ASSIGN) {
+			p.errors = append(p.errors, fmt.Sprintf("expected '=' after foreach attribute %q", attrName))
+			return nil
+		}
+		p.nextToken()
+
+		switch attrName {
+		case "from":
+			expr := p.parsePrimaryExpr()
+			if expr == nil {
+				return nil
+			}
+			node.Source = expr
+		case "item":
+			name, ok := p.parseForeachVariableName()
+			if !ok {
+				return nil
+			}
+			if node.Item != "" {
+				p.errors = append(p.errors, "duplicate item attribute in foreach")
+				return nil
+			}
+			node.Item = name
+		case "key":
+			name, ok := p.parseForeachVariableName()
+			if !ok {
+				return nil
+			}
+			if node.Key != "" {
+				p.errors = append(p.errors, "duplicate key attribute in foreach")
+				return nil
+			}
+			node.Key = name
+		case "name":
+			name, ok := p.parseForeachName()
+			if !ok {
+				return nil
+			}
+			node.Name = name
+		default:
+			p.errors = append(p.errors, fmt.Sprintf("unsupported foreach attribute: %s", attrName))
+			return nil
+		}
+	}
+
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, "expected RDELIM to close foreach tag")
+		return nil
+	}
+	// '}' を消費
+	p.nextToken()
+
+	if node.Source == nil {
+		p.errors = append(p.errors, "foreach requires from attribute")
+		return nil
+	}
+	if node.Item == "" {
+		p.errors = append(p.errors, "foreach requires item attribute")
+		return nil
+	}
+
+	node.Body = p.parseBlockUntil(token.FOREACHELSE, token.ENDFOREACH)
+
+	if p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.FOREACHELSE) {
+		// '{' を消費
+		p.nextToken()
+		// 'foreachelse' を消費
+		p.nextToken()
+
+		if !p.curTokenIs(token.RDELIM) {
+			p.errors = append(p.errors, "expected RDELIM for foreachelse tag")
+			return nil
+		}
+		// '}' を消費
+		p.nextToken()
+
+		node.Alternative = p.parseBlockUntil(token.ENDFOREACH)
+	}
+
+	if !(p.curTokenIs(token.LDELIM) && p.peekTokenIs(token.ENDFOREACH)) {
+		p.errors = append(p.errors, "expected {/foreach} tag")
+		return nil
+	}
+	// '{' を消費
+	p.nextToken()
+	// '/foreach' を消費
+	p.nextToken()
+
+	if !p.curTokenIs(token.RDELIM) {
+		p.errors = append(p.errors, "expected RDELIM for /foreach tag")
+		return nil
+	}
+	// '}' を消費
+	p.nextToken()
+
+	return node
+}
+
 // parseBlockUntil は指定された終了トークンが見つかるまでノードをパースし続ける
 func (p *Parser) parseBlockUntil(endTokens ...token.TokenType) *ast.ListNode {
 	block := &ast.ListNode{Nodes: []ast.Node{}}
@@ -269,6 +388,50 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 
 func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
+}
+
+func (p *Parser) parseForeachVariableName() (string, bool) {
+	switch p.curToken.Type {
+	case token.DOLLAR:
+		p.nextToken()
+		if !p.curTokenIs(token.IDENT) {
+			p.errors = append(p.errors, fmt.Sprintf("expected IDENT after '$' in foreach attribute, got %s", p.curToken.Type))
+			return "", false
+		}
+		name := p.curToken.Literal
+		p.nextToken()
+		return name, true
+	case token.IDENT:
+		name := p.curToken.Literal
+		p.nextToken()
+		return name, true
+	default:
+		p.errors = append(p.errors, fmt.Sprintf("expected variable name in foreach attribute, got %s", p.curToken.Type))
+		return "", false
+	}
+}
+
+func (p *Parser) parseForeachName() (string, bool) {
+	switch p.curToken.Type {
+	case token.IDENT, token.STRING:
+		name := p.curToken.Literal
+		p.nextToken()
+		return name, true
+	default:
+		p.errors = append(p.errors, fmt.Sprintf("expected identifier or string for foreach name attribute, got %s", p.curToken.Type))
+		return "", false
+	}
+}
+
+func (p *Parser) consumeUntil(t token.TokenType) {
+	// 現在のトークンから指定のトークンまで読み飛ばす
+	p.nextToken()
+	for !p.curTokenIs(token.EOF) && !p.curTokenIs(t) {
+		p.nextToken()
+	}
+	if p.curTokenIs(t) {
+		p.nextToken()
+	}
 }
 
 func (p *Parser) parseVariableTagWithPipeline() ast.Node {

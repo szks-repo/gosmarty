@@ -48,23 +48,25 @@ const (
 	GT    = ">"
 	GTE   = ">="
 
-	IF         = "if"
-	ELSE       = "else"
-	ELSEIF     = "elseif"
-	ENDIF      = "/if"
-	FOREACH    = "foreach"
-	ENDFOREACH = "/foreach"
+	IF          = "if"
+	ELSE        = "else"
+	ELSEIF      = "elseif"
+	ENDIF       = "/if"
+	FOREACH     = "foreach"
+	FOREACHELSE = "foreachelse"
+	ENDFOREACH  = "/foreach"
 )
 
 var keywords = map[string]TokenType{
-	"if":       IF,
-	"else":     ELSE,
-	"elseif":   ELSEIF,
-	"/if":      ENDIF,
-	"foreach":  FOREACH,
-	"/foreach": ENDFOREACH,
-	"literal":  LITERAL,
-	"/literal": ENDLITERAL,
+	"if":          IF,
+	"else":        ELSE,
+	"elseif":      ELSEIF,
+	"/if":         ENDIF,
+	"foreach":     FOREACH,
+	"foreachelse": FOREACHELSE,
+	"/foreach":    ENDFOREACH,
+	"literal":     LITERAL,
+	"/literal":    ENDLITERAL,
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定します。

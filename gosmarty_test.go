@@ -190,6 +190,107 @@ func TestModifier(t *testing.T) {
 	}
 }
 
+func TestForeach(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		input string
+		env   *Environment
+		want  string
+	}{
+		{
+			name:  "array iteration",
+			input: `{foreach from=$items item=item}{$item}{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{"apple", "banana", "cherry"}),
+			)),
+			want: "applebananacherry",
+		},
+		{
+			name:  "array with key",
+			input: `{foreach from=$items item=item key=index}{$index}:{$item};{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{"apple", "banana"}),
+			)),
+			want: "0:apple;1:banana;",
+		},
+		{
+			name:  "map iteration sorted by key",
+			input: `{foreach from=$pairs item=value key=key}{$key}={$value};{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("pairs", map[string]any{
+					"b": "Beta",
+					"a": "Alpha",
+				}),
+			)),
+			want: "a=Alpha;b=Beta;",
+		},
+		{
+			name:  "map array iteration",
+			input: `{foreach from=$users item=value}{$value.userId}:{$value.name},{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("users", []map[string]any{
+					{
+						"userId": 1,
+						"name":   "Tom",
+					},
+					{
+						"userId": 2,
+						"name":   "Bob",
+					},
+				}),
+			)),
+			want: "1:Tom,2:Bob,",
+		},
+		{
+			name:  "foreachelse fallback",
+			input: `{foreach from=$items item=item}{$item}{foreachelse}empty{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", []string{}),
+			)),
+			want: "empty",
+		},
+		{
+			name:  "foreachelse fallback",
+			input: `{foreach from=$items item=item}{$item}{foreachelse}empty{/foreach}`,
+			env: Must(NewEnvironment(
+				WithVariable("items", 123),
+			)),
+			want: "empty",
+		},
+		{
+			name:  "restore outer variable",
+			input: `start:{$item} {foreach from=$items item=item}{$item}{/foreach} end:{$item}`,
+			env: Must(NewEnvironment(
+				WithVariable("item", "outside"),
+				WithVariable("items", []string{"inside"}),
+			)),
+			want: "start:outside inside end:outside",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gsm := New()
+			tmpl, err := gsm.Parse(tt.input)
+			if err != nil {
+				t.Fatalf("Parse() error: %v", err)
+			}
+
+			evaled := tmpl.Execute(tt.env)
+			result, ok := evaled.(*object.String)
+			if !ok {
+				t.Fatal("result is not *object.String")
+			}
+
+			if result.Value != tt.want {
+				t.Errorf("unexpected output. got=%q, want=%q", result.Value, tt.want)
+			}
+		})
+	}
+}
+
 func TestComment(t *testing.T) {
 	t.Parallel()
 
@@ -254,9 +355,9 @@ func TestIfStatements(t *testing.T) {
 
 	// テストケースを定義
 	tests := []struct {
-		input    string
-		env      *Environment
-		want string
+		input string
+		env   *Environment
+		want  string
 	}{
 		{
 			input: `{if $is_logged_in}Welcome, {$name}!{else}Hello, Guest.{/if}`,
@@ -323,7 +424,7 @@ func TestIfStatements(t *testing.T) {
 			)),
 			want: "",
 		},
-				{
+		{
 			input: `{if $primary}Primary{elseif $secondary}Secondary{else}Fallback{/if}`,
 			env: Must(NewEnvironment(
 				WithVariable("primary", false),

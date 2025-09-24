@@ -31,6 +31,10 @@ func (e *Environment) setVar(name string, val object.Object) {
 	e.vars[name] = val
 }
 
+func (e *Environment) unsetVar(name string) {
+	delete(e.vars, name)
+}
+
 type EnvOption = func(env *Environment) error
 
 func WithVariable(name string, value any) EnvOption {

@@ -62,6 +62,16 @@ func NewObjectFromAny(i any) (Object, error) {
 			values[idx] = NewString(elem)
 		}
 		return &Array{Value: values}, nil
+	case []map[string]any:
+		values := make([]Object, len(i))
+		for idx, elem := range i {
+			obj, err := NewObjectFromAny(elem)
+			if err != nil {
+				return nil, err
+			}
+			values[idx] = obj
+		}
+		return &Array{Value: values}, nil
 	case []any:
 		values := make([]Object, len(i))
 		for idx, elem := range i {
@@ -110,6 +120,31 @@ func NewObjectFromAny(i any) (Object, error) {
 			return &Number{Value: float64(rv.Uint())}, nil
 		case reflect.Bool:
 			return &Boolean{Value: rv.Bool()}, nil
+		case reflect.Slice, reflect.Array:
+			len := rv.Len()
+			values := make([]Object, len)
+			for idx := 0; idx < len; idx++ {
+				obj, err := NewObjectFromAny(rv.Index(idx).Interface())
+				if err != nil {
+					return nil, err
+				}
+				values[idx] = obj
+			}
+			return &Array{Value: values}, nil
+		case reflect.Map:
+			if rv.Type().Key().Kind() != reflect.String {
+				return nil, fmt.Errorf("unsupported map key type: %s", rv.Type().Key().Kind())
+			}
+			pairs := make(map[string]Object)
+			iter := rv.MapRange()
+			for iter.Next() {
+				valObj, err := NewObjectFromAny(iter.Value().Interface())
+				if err != nil {
+					return nil, err
+				}
+				pairs[iter.Key().String()] = valObj
+			}
+			return &Map{Value: pairs}, nil
 		case reflect.Struct:
 			pairs := make(map[string]Object)
 			rt := reflect.TypeOf(i)
