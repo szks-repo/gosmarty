@@ -17,6 +17,23 @@ type Parser struct {
 	peekToken token.Token
 }
 
+const (
+	_ int = iota
+	LOWEST
+	AND
+	COMPARISON
+)
+
+var precedences = map[token.TokenType]int{
+	token.AND:   AND,
+	token.EQ:    COMPARISON,
+	token.NOTEQ: COMPARISON,
+	token.LT:    COMPARISON,
+	token.LTE:   COMPARISON,
+	token.GT:    COMPARISON,
+	token.GTE:   COMPARISON,
+}
+
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		l:      l,
@@ -131,7 +148,7 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 	node := &ast.IfNode{Token: p.curToken}
 	p.nextToken() // 'if' を消費 -> curTokenは 条件式の先頭
 
-	cond := p.parsePrimaryExpr()
+	cond := p.parseExpression(LOWEST)
 	if cond == nil {
 		return nil
 	}
@@ -156,7 +173,7 @@ func (p *Parser) parseIfTag() *ast.IfNode {
 		// 'elseif' を消費
 		p.nextToken()
 
-		cond := p.parsePrimaryExpr()
+		cond := p.parseExpression(LOWEST)
 		if cond == nil {
 			return nil
 		}
@@ -234,7 +251,7 @@ func (p *Parser) parseForeachTag() *ast.ForeachNode {
 
 		switch attrName {
 		case "from":
-			expr := p.parsePrimaryExpr()
+			expr := p.parseExpression(LOWEST)
 			if expr == nil {
 				return nil
 			}
@@ -414,7 +431,10 @@ func (p *Parser) parseVariableTagWithPipeline() ast.Node {
 	p.nextToken() // '{' を消費 -> curTokenは '$'
 
 	// 最初に左辺の式をパース
-	left := p.parsePrimaryExpr()
+	left := p.parseExpression(LOWEST)
+	if left == nil {
+		return nil
+	}
 
 	// '|' が続く限りパイプラインを構築
 	for p.curTokenIs(token.PIPE) {
@@ -548,7 +568,10 @@ func (p *Parser) parsePrimaryExpr() ast.Node {
 			bracketToken := p.curToken
 			p.nextToken() // '[' を消費
 
-			index := p.parsePrimaryExpr() // インデックス内の式 ('0'など) をパース
+			index := p.parseExpression(LOWEST) // インデックス内の式 ('0'など) をパース
+			if index == nil {
+				return nil
+			}
 
 			// 現在のトークンが ']' であることを確認
 			if !p.curTokenIs(token.RBRACKET) {
@@ -570,6 +593,57 @@ func (p *Parser) parsePrimaryExpr() ast.Node {
 			return left
 		}
 	}
+
+	return left
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Node {
+	left := p.parsePrimaryExpr()
+	if left == nil {
+		return nil
+	}
+
+	for !p.curTokenIs(token.RDELIM) && !p.curTokenIs(token.PIPE) && !p.curTokenIs(token.RBRACKET) && !p.curTokenIs(token.EOF) {
+		curPrec := p.curPrecedence()
+		if precedence >= curPrec {
+			break
+		}
+		tokType := p.curToken.Type
+		if _, ok := precedences[tokType]; !ok {
+			break
+		}
+
+		tok := p.curToken
+		p.nextToken()
+
+		right := p.parseExpression(curPrec)
+		if right == nil {
+			return nil
+		}
+
+		left = &ast.InfixExpression{
+			Token:    tok,
+			Left:     left,
+			Operator: tok.Literal,
+			Right:    right,
+		}
+	}
+
+	return left
+}
+
+func (p *Parser) curPrecedence() int {
+	if prec, ok := precedences[p.curToken.Type]; ok {
+		return prec
+	}
+	return LOWEST
+}
+
+func (p *Parser) peekPrecedence() int {
+	if prec, ok := precedences[p.peekToken.Type]; ok {
+		return prec
+	}
+	return LOWEST
 }
 
 func (p *Parser) parseNumberLiteral() ast.Node {
@@ -598,6 +672,7 @@ func isIdentLike(t token.TokenType) bool {
 		token.ELSEIF,
 		token.ENDIF,
 		token.ENDFOREACH,
+		token.AND,
 		token.LITERAL,
 		token.ENDLITERAL:
 		return true

@@ -259,7 +259,7 @@ func TestForeach(t *testing.T) {
 			)),
 			want: "First!A;B;",
 		},
-				{
+		{
 			name:  "last flag in if",
 			input: `{foreach from=$items item=item name=list}{if $smarty.foreach.list.last}Last!{/if}{$item};{/foreach}`,
 			env: Must(NewEnvironment(
@@ -472,6 +472,30 @@ func TestIfStatements(t *testing.T) {
 				WithVariable("secondary", false),
 			)),
 			want: "Fallback",
+		},
+		{
+			input: `{if $num > 50 and $inSellingPeriod}在庫あり{else}在庫なし{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("num", 60),
+				WithVariable("inSellingPeriod", true),
+			)),
+			want: "在庫あり",
+		},
+		{
+			input: `{if $num > 50 and $inSellingPeriod}在庫あり{else}在庫なし{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("num", 60),
+				WithVariable("inSellingPeriod", false),
+			)),
+			want: "在庫なし",
+		},
+		{
+			input: `{if $num > 50 and $inSellingPeriod}在庫あり{else}在庫なし{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("num", 40),
+				WithVariable("inSellingPeriod", true),
+			)),
+			want: "在庫なし",
 		},
 	}
 

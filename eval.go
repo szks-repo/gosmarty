@@ -35,6 +35,8 @@ func Eval(node ast.Node, env *Environment) object.Object {
 		return evalIndexExpression(node, env)
 	case *ast.NumberLiteral:
 		return &object.Number{Value: node.Value}
+	case *ast.InfixExpression:
+		return evalInfixExpression(node, env)
 	case *ast.IfNode:
 		return evalIfNode(node, env)
 	case *ast.PipeNode:
@@ -94,6 +96,109 @@ func evalFieldAccess(node *ast.FieldAccess, env *Environment) object.Object {
 	}
 
 	return NULL
+}
+
+func evalInfixExpression(node *ast.InfixExpression, env *Environment) object.Object {
+	switch node.Operator {
+	case "and":
+		left := unwrapOptional(Eval(node.Left, env))
+		if left == nil {
+			left = NULL
+		}
+		if !isTruthy(left) {
+			return object.FALSE
+		}
+		right := unwrapOptional(Eval(node.Right, env))
+		if right == nil {
+			right = NULL
+		}
+		if isTruthy(right) {
+			return object.TRUE
+		}
+		return object.FALSE
+	case ">", ">=", "<", "<=", "==", "!=":
+		left := Eval(node.Left, env)
+		right := Eval(node.Right, env)
+		return evalComparisonExpression(node.Operator, left, right)
+	default:
+		return NULL
+	}
+}
+
+func evalComparisonExpression(op string, leftObj, rightObj object.Object) object.Object {
+	left := unwrapOptional(leftObj)
+	if left == nil {
+		left = NULL
+	}
+	right := unwrapOptional(rightObj)
+	if right == nil {
+		right = NULL
+	}
+
+	switch op {
+	case ">", ">=", "<", "<=":
+		lNum, lOk := left.(*object.Number)
+		rNum, rOk := right.(*object.Number)
+		if !lOk || !rOk {
+			return object.FALSE
+		}
+		var result bool
+		switch op {
+		case ">":
+			result = lNum.Value > rNum.Value
+		case ">=":
+			result = lNum.Value >= rNum.Value
+		case "<":
+			result = lNum.Value < rNum.Value
+		case "<=":
+			result = lNum.Value <= rNum.Value
+		}
+		return boolObject(result)
+	case "==", "!=":
+		result := objectsEqual(left, right)
+		if op == "!=" {
+			result = !result
+		}
+		return boolObject(result)
+	default:
+		return NULL
+	}
+}
+
+func objectsEqual(left, right object.Object) bool {
+	if left == nil && right == nil {
+		return true
+	}
+	if left == nil || right == nil {
+		return false
+	}
+
+	if left.Type() != right.Type() {
+		return false
+	}
+
+	switch l := left.(type) {
+	case *object.Null:
+		return true
+	case *object.Number:
+		r := right.(*object.Number)
+		return l.Value == r.Value
+	case *object.String:
+		r := right.(*object.String)
+		return l.Value == r.Value
+	case *object.Boolean:
+		r := right.(*object.Boolean)
+		return l.Value == r.Value
+	default:
+		return left == right
+	}
+}
+
+func boolObject(val bool) object.Object {
+	if val {
+		return object.TRUE
+	}
+	return object.FALSE
 }
 
 func evalIfNode(in *ast.IfNode, env *Environment) object.Object {

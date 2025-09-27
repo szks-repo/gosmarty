@@ -47,6 +47,7 @@ const (
 	LTE   = "<="
 	GT    = ">"
 	GTE   = ">="
+	AND   = "and"
 
 	IF          = "if"
 	ELSE        = "else"
@@ -67,6 +68,7 @@ var keywords = map[string]TokenType{
 	"/foreach":    ENDFOREACH,
 	"literal":     LITERAL,
 	"/literal":    ENDLITERAL,
+	"and":         AND,
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定します。

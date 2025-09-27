@@ -85,7 +85,41 @@ func (l *Lexer) nextTokenInTag() token.Token {
 		tok = newToken(token.RDELIM, l.ch)
 		l.state = stateText // テキストモードに復帰
 	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok.Type = token.EQ
+			tok.Literal = string(ch) + string(l.ch)
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
+	case '!':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok.Type = token.NOTEQ
+			tok.Literal = string(ch) + string(l.ch)
+		} else {
+			tok = newToken(token.BANG, l.ch)
+		}
+	case '>':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok.Type = token.GTE
+			tok.Literal = string(ch) + string(l.ch)
+		} else {
+			tok = newToken(token.GT, l.ch)
+		}
+	case '<':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok.Type = token.LTE
+			tok.Literal = string(ch) + string(l.ch)
+		} else {
+			tok = newToken(token.LT, l.ch)
+		}
 	case '$':
 		tok = newToken(token.DOLLAR, l.ch)
 	case '|':
