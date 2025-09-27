@@ -48,6 +48,7 @@ const (
 	GT    = ">"
 	GTE   = ">="
 	AND   = "and"
+	OR    = "or"
 
 	IF          = "if"
 	ELSE        = "else"
@@ -69,6 +70,7 @@ var keywords = map[string]TokenType{
 	"literal":     LITERAL,
 	"/literal":    ENDLITERAL,
 	"and":         AND,
+	"or":          OR,
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定します。

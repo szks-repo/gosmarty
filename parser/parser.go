@@ -20,11 +20,13 @@ type Parser struct {
 const (
 	_ int = iota
 	LOWEST
+	OR
 	AND
 	COMPARISON
 )
 
 var precedences = map[token.TokenType]int{
+	token.OR:    OR,
 	token.AND:   AND,
 	token.EQ:    COMPARISON,
 	token.NOTEQ: COMPARISON,
@@ -673,6 +675,7 @@ func isIdentLike(t token.TokenType) bool {
 		token.ENDIF,
 		token.ENDFOREACH,
 		token.AND,
+		token.OR,
 		token.LITERAL,
 		token.ENDLITERAL:
 		return true

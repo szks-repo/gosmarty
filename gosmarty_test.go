@@ -497,6 +497,22 @@ func TestIfStatements(t *testing.T) {
 			)),
 			want: "在庫なし",
 		},
+		{
+			input: `{if $num > 50 or $isVip}優先入荷{else}通常手配{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("num", 40),
+				WithVariable("isVip", true),
+			)),
+			want: "優先入荷",
+		},
+		{
+			input: `{if $num > 50 or $isVip}優先入荷{else}通常手配{/if}`,
+			env: Must(NewEnvironment(
+				WithVariable("num", 20),
+				WithVariable("isVip", false),
+			)),
+			want: "通常手配",
+		},
 	}
 
 	for _, tt := range tests {

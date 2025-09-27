@@ -116,6 +116,22 @@ func evalInfixExpression(node *ast.InfixExpression, env *Environment) object.Obj
 			return object.TRUE
 		}
 		return object.FALSE
+	case "or":
+		left := unwrapOptional(Eval(node.Left, env))
+		if left == nil {
+			left = NULL
+		}
+		if isTruthy(left) {
+			return object.TRUE
+		}
+		right := unwrapOptional(Eval(node.Right, env))
+		if right == nil {
+			right = NULL
+		}
+		if isTruthy(right) {
+			return object.TRUE
+		}
+		return object.FALSE
 	case ">", ">=", "<", "<=", "==", "!=":
 		left := Eval(node.Left, env)
 		right := Eval(node.Right, env)
