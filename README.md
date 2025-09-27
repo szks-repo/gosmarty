@@ -15,7 +15,7 @@ This project aims to provide a Go-native implementation of the popular PHP templ
 | Array Access           |  `{$users[0].name}`                                   | ✅ |
 | Variable Modifiers     | `{$title\|upper\|escape}`                            | ✅ |
 | If/Else Statements     | `{if $isLoggedIn}Welcome!{else}Please log in.{/if}`  | ✅ |
-|                        | `{if $num > 5}true{else}false{/if}`                  | ❌ |
+| Comparisons & Logic    | `{if $num > 5 or $isVip}...{/if}`                    | ✅ |
 | Comments               | `{* This is a comment *}`                            | ✅ |
 
 ### Roadmap
